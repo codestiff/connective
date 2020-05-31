@@ -6,7 +6,8 @@
 
   :aliases {"docs" ["with-profile" "docs" "codox"]}
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
-                    :dependencies [[codestiff/connective.core "0.1.0-SNAPSHOT"]]
+                    :dependencies [[codestiff/connective.core "0.1.0-SNAPSHOT"]
+                                   [codestiff/connective.firestore "0.1.0-SNAPSHOT"]]
 
                     :codox {:output-path "codox"
                             :metadata {:doc/format :markdown}
