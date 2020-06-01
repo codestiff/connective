@@ -5,6 +5,7 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
 
   :aliases {"docs" ["with-profile" "docs" "codox"]}
+  :dependencies [[org.clojure/clojure "1.10.1"]]
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
                     :dependencies [[codestiff/connective.core "0.1.0-SNAPSHOT"]
                                    [codestiff/connective.firestore "0.1.0-SNAPSHOT"]]
