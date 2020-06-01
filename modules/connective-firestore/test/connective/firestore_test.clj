@@ -87,17 +87,24 @@
 (deftest a-basic-init-test
   (testing "an example init test"
     (let [attrs {:sku "ff-0012"
-                     :name "kitten"
-                     :description "So many wonder kittens to play with. Try them all."
-                     :price 128.99}
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+
           entity (core/init-entity
                   fs
                   context
                   {::entity/kind ::items
-                   ::entity/attributes attrs})]
+                   ::entity/attributes attrs})
+
+          expected-ident {::entity/kind ::items
+                          ::entity/id (:sku attrs)}]
 
       (is (= attrs (core/attributes entity)))
+
       (is (false? (::entity/persisted? (core/context entity))))
+
+      (is (= expected-ident (core/ident entity)))
 
       )))
 

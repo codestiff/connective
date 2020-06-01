@@ -29,6 +29,9 @@
   [entity context]
   (assoc entity ::context context))
 
+(defn ident-of-entity
+  [{::keys [ident]}]
+  ident)
 
 (defn assoc-default-ident
   [{::keys [ident]
