@@ -1,4 +1,7 @@
-(ns connective.core)
+(ns connective.core
+  (:require
+   [connective.adapter :as adapter]
+   [connective.entity :as entity]))
 
 #_(defprotocol ConnectiveValidation
   "a connective validator"
@@ -7,31 +10,40 @@
     "returns a validator which can be used to validate entities")
   )
 
-(defprotocol ConnectiveSystem
-  "a connective system"
+(defmacro defn-of-adaptor
+  [sym]
+  `(defn ~sym
+     [~'adapter ~'context ~'arg]
+     (~(symbol "adapter" (str sym)) ~'adapter ~'context ~'arg)))
 
-  (related-query
-    [_ context params]
-    "create a query which will be passed to execute
-     query in order to fetch backing entities data")
+(defn-of-adaptor related-query)
+(defn-of-adaptor reference-query)
+(defn-of-adaptor execute-query)
+(defn-of-adaptor init-entity)
+(defn-of-adaptor write-entity)
+(defn-of-adaptor read-entity)
+(defn-of-adaptor delete-entity)
+(defn-of-adaptor reference-value)
 
-  (reference-query
-    [_ context params]
-    "create a query which will be passed to execute
-     query in order to fetch backing entity data")
+(defn kind-of-definition
+  [{::entity/keys [kind]}]
+  (assert (some? kind))
+  kind)
 
-  (execute-query
-    [_ context query]
-    "execute a query which return a collection of entity data")
+(defn compile-schema
+  [coll]
+  (reduce
+   (fn
+     [cp definition]
+     (let [k (kind-of-definition definition)]
+       (assert (not (contains? cp k)))
+       (assoc cp k definition)))
+   {}
+   coll))
 
-  (write-entity
-    [_ context entity]
-    "writes an entity to the backend system")
+(def attributes entity/attributes-of-entity)
+(def context entity/context-of-entity)
 
-  (read-entity
-    [_ context entity]
-    "read an entity from the backend system")
-
-  (delete-entity
-    [_ context entity]
-    "deletes an entity from the backend system"))
+(comment
+  (macroexpand-1 '(defn-of-adaptor related-query))
+  )

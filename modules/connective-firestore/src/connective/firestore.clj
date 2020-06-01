@@ -1,10 +1,17 @@
 (ns connective.firestore
   (:require
    [firestore-clj.core :as f]
-   [connective.core :as core]))
+   [connective.adapter :as adapter]
+   [connective.entity :as entity]))
 
-(deftype FirestoreSystem [config]
-    core/ConnectiveSystem
+(deftype FirestoreAdapter
+    [config]
+
+  adapter/IAdapter
+
+  (init-entity
+    [a context entity]
+    (entity/init a context entity))
 
   (related-query
     [_ context params]
@@ -37,7 +44,7 @@
     (prn context)
     (prn entity)))
 
-(def fs (FirestoreSystem. nil))
+(def fs (FirestoreAdapter. nil))
 
 (comment
 

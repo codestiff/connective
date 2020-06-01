@@ -6,6 +6,10 @@
 
   :aliases {"docs" ["with-profile" "docs" "codox"]}
   :dependencies [[org.clojure/clojure "1.10.1"]]
+  :sub [
+        "modules/connective-core"
+        "modules/connective-firestore"
+        ]
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
                     :dependencies [[codestiff/connective.core "0.1.0-SNAPSHOT"]
                                    [codestiff/connective.firestore "0.1.0-SNAPSHOT"]]
@@ -15,6 +19,6 @@
                             :source-uri "https://github.com/codestiff/connective/blob/{version}/{filepath}#L{line}"
                             :source-paths ["modules/connective-core/src"]}}}
 
-  :plugins [[lein-sub "0.2.3"]
+  :plugins [[lein-sub "0.3.0"]
             [lein-codox "0.10.7"]
             [lein-ancient "0.6.15"]])
