@@ -72,18 +72,6 @@
   {::entity/schema c-schema
    ::entity/conn db})
 
-#_(def fs (atom (FirestoreAdapter. nil)))
-
-#_(def ball-item
-  (core/init-entity
-   fs
-   context
-   {::entity/kind ::items
-    ::entity/attributes {:sku "ff-0012"
-                         :name "kitten"
-                         :description "So many wonder kittens to play with. Try them all."
-                         :price 128.99}}))
-
 (deftest a-basic-init-entity-test
   (testing "an example init test"
     (let [attrs {:sku "ff-0012"
@@ -155,7 +143,35 @@
 
       (is (= expected-ident (core/ident written-entity)))
 
-      )))
+      ))
+
+  (testing "an example write entity test"
+    (let [attrs {:sku "ff-0012"
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+
+          original-entities (core/init-entities
+                             fs
+                             context
+                             [{::entity/kind ::items
+                               ::entity/attributes attrs}])
+
+          expected-ident [{::entity/kind ::items
+                           ::entity/id (:sku attrs)}]
+
+          written-entities (core/write-entities
+                            fs
+                            context
+                            original-entities)
+          written-entity (first written-entities)]
+
+      (is (= attrs (core/attributes written-entity)))
+
+      (is (contains? (core/context written-entity) ::entity/persisted-value))
+
+      ))
+  )
 
 (deftest a-basic-read-entity-test
   (testing "an example read entity test"

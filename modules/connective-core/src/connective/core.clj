@@ -41,6 +41,19 @@
 (def context entity/context-of-entity)
 (def ident entity/ident-of-entity)
 
+(defmacro def-collection-fn
+  [sym-plural sym-singular]
+  `(defn ~sym-plural
+     [~'adapter ~'context ~'coll]
+     (for [~'item ~'coll]
+      (~sym-singular ~'adapter ~'context ~'item))))
+
+(def-collection-fn init-entities init-entity)
+(def-collection-fn write-entities write-entity)
+(def-collection-fn read-entities read-entity)
+(def-collection-fn delete-entities delete-entity)
+
 (comment
   (macroexpand-1 '(defn-of-adaptor related-query))
+  (macroexpand-1 '(def-collection-fn write-entities write-entity))
   )
