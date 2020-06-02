@@ -3,13 +3,6 @@
    [connective.adapter :as adapter]
    [connective.entity :as entity]))
 
-#_(defprotocol ConnectiveValidation
-  "a connective validator"
-  (validator
-    []
-    "returns a validator which can be used to validate entities")
-  )
-
 (defmacro defn-of-adaptor
   [sym]
   `(defn ~sym

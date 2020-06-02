@@ -144,9 +144,7 @@
 
   (validator
     [_]
-    (get params ::validator))
-
-  )
+    (get params ::validator)))
 
 (def fs
   (FirestoreAdapter.
