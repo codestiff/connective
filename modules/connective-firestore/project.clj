@@ -5,5 +5,6 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [codestiff/connective.core "0.1.0-SNAPSHOT"]
-                 [polvo/firestore-clj "1.2.1"]]
+                 [polvo/firestore-clj "1.2.1"]
+                 [ring/ring-codec "1.1.2"]]
   :repl-options {:init-ns connective.firestore})

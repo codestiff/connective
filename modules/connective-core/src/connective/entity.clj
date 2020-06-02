@@ -29,30 +29,52 @@
   [entity context]
   (assoc entity ::context context))
 
+(defn merge-context
+  [entity context]
+  (update entity ::context merge context))
+
+(defn assoc-persisted-value
+  [entity]
+  (merge-context
+   entity
+   {::persisted-value entity}))
+
 (defn ident-of-entity
   [{::keys [ident]}]
   ident)
-
-(defn assoc-default-ident
-  [{::keys [ident]
-    :as entity}
-   {::keys [id-fn]
-    :as schema}]
-  (assert (some? id-fn))
-  (if (some? ident)
-    entity
-    (let [attrs (attributes-of-entity entity)
-          kind (kind-of-entity entity)]
-      (assoc
-       entity
-       ::kind kind
-       ::ident {::kind kind
-                ::id (id-fn attrs)}))))
 
 (defn kind-of-entity
   [{::keys [kind]}]
   (assert (some? kind))
   kind)
+
+(defn id-of-ident
+  [{::keys [id]}]
+  (assert (some? id))
+  id)
+
+(defn kind-of-ident
+  [{::keys [kind]}]
+  (assert (some? kind))
+  kind)
+
+(defn persisted-value-of-entity
+  [entity]
+  (get (context-of-entity entity) ::persisted-value))
+
+(defn assoc-ident
+  [{::keys [ident]
+    :as entity}
+   {::keys [id-fn]
+    :as schema}]
+  (assert (some? id-fn))
+  (let [attrs (attributes-of-entity entity)
+        kind (kind-of-entity entity)]
+    (assoc
+     entity
+     ::kind kind
+     ::ident {::kind kind
+              ::id (id-fn attrs)})))
 
 (defn entity-schema-contains-relationship?
   [{::keys [relationships] :as schema}
@@ -100,7 +122,7 @@
   a
   )
 
-(defn init
+(defn prepare-entity
   [connective
    {::keys [schema]
     :as context}
@@ -113,7 +135,14 @@
                 (merge {::attributes {}} entity)
                 (assoc-reference-attributes-of-relationships connective context)
                 (validate-attributes connective entity-schema))]
-    (->
-     entity
-     (assoc-default-ident entity-schema)
-     (assoc-context {::persisted? false}))))
+    (assoc-ident entity entity-schema)))
+
+(defn init
+  [connective
+   {::keys [schema]
+    :as context}
+   {::keys [kind]
+    :as entity}]
+  (->
+   (prepare-entity connective context entity)
+   (assoc-context {})))

@@ -84,7 +84,7 @@
                          :description "So many wonder kittens to play with. Try them all."
                          :price 128.99}}))
 
-(deftest a-basic-init-test
+(deftest a-basic-init-entity-test
   (testing "an example init test"
     (let [attrs {:sku "ff-0012"
                  :name "kitten"
@@ -102,9 +102,81 @@
 
       (is (= attrs (core/attributes entity)))
 
-      (is (false? (::entity/persisted? (core/context entity))))
+      (is (= {} (core/context entity)))
+
+      (is (nil? (entity/persisted-value-of-entity entity)))
 
       (is (= expected-ident (core/ident entity)))
+
+      )))
+
+(deftest a-basic-write-entity-test
+  (testing "an example write entity test"
+    (let [attrs {:sku "ff-0012"
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+
+          original-entity (core/init-entity
+                           fs
+                           context
+                           {::entity/kind ::items
+                            ::entity/attributes attrs})
+
+          expected-ident {::entity/kind ::items
+                          ::entity/id (:sku attrs)}
+
+          written-entity (core/write-entity
+                          fs
+                          context
+                          original-entity)]
+
+      (is (= attrs (core/attributes written-entity)))
+
+      (is (contains? (core/context written-entity) ::entity/persisted-value))
+
+      (is (=
+           (update written-entity ::entity/context dissoc ::entity/persisted-value)
+           (entity/persisted-value-of-entity written-entity)))
+
+      (is (= expected-ident (core/ident written-entity)))
+
+      )))
+
+(deftest a-basic-read-entity-test
+  (testing "an example read entity test"
+    (let [attrs {:sku "ff-0012"
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+
+          original-entity (core/init-entity
+                           fs
+                           context
+                           {::entity/kind ::items
+                            ::entity/attributes attrs})
+
+          written-entity (core/write-entity
+                          fs
+                          context
+                          original-entity)
+
+          ident (entity/ident-of-entity original-entity)
+
+          read-entity (core/read-entity
+                       fs
+                       context
+                       ident)]
+
+      (is (= attrs (core/attributes read-entity)))
+
+      (is (contains? (core/context read-entity) ::entity/persisted-value))
+
+      (is (=
+           original-entity
+           (entity/persisted-value-of-entity read-entity)))
+
+      (is (= ident (core/ident read-entity)))
 
       )))
 
