@@ -1,9 +1,12 @@
 (ns connective.firestore
   (:require
    [ring.util.codec :as codec]
+   [malli.core :as m]
    [firestore-clj.core :as f]
+   [connective.validator :as validator]
    [connective.adapter :as adapter]
-   [connective.entity :as entity]))
+   [connective.entity :as entity]
+   [connective.core :as core]))
 
 (defn coll-id-of-ident
   [{::entity/keys [kind]}]
@@ -43,8 +46,28 @@
                {} doc)]
     (assoc entity ::entity/attributes attrs)))
 
+(deftype MalliValidator
+    []
+
+  validator/IValidator
+
+  (validate
+    [_ context entity]
+    (let [attrs (core/attributes entity)
+          {::entity/keys [attributes]} (entity/entity-schema context)]
+      (if (nil? attributes)
+        true
+        (m/validate attributes attrs))))
+
+  (explain
+    [_ context entity]
+    (let [attrs (core/attributes entity)
+          {::entity/keys [attributes]} (entity/entity-schema context)]
+      (assert (some? attributes))
+      (m/explain attributes attrs))))
+
 (deftype FirestoreAdapter
-    [config]
+    [params]
 
   adapter/IAdapter
 
@@ -75,20 +98,33 @@
     (let [base-entity {::entity/ident ident
                        ::entity/kind kind}
           doc-id (doc-id base-entity)
-          doc (->
-               (f/doc conn doc-id)
-               (f/pull))
-          entity (assoc-entity-attributes base-entity doc)
-          entity (entity/init
-                  a
-                  context
-                  entity)]
-      (entity/assoc-persisted-value entity)))
+          snapshot (->
+                    (f/doc conn doc-id)
+                    (f/doc-snap))]
+      (if (f/exists? snapshot)
+        (let [data (f/ds->plain snapshot)
+              entity (assoc-entity-attributes base-entity data)
+              entity (entity/init
+                      a
+                      context
+                      entity)]
+          (entity/assoc-persisted-value entity))
+        nil)))
 
   (delete-entity
-    [_ context entity]
-    (prn context)
-    (prn entity))
+    [_
+     {::entity/keys [conn]
+      :as context}
+     {::entity/keys [kind]
+      :as ident}]
+    (assert (some? kind))
+    (let [base-entity {::entity/ident ident
+                       ::entity/kind kind}
+          doc-id (doc-id base-entity)
+          doc (->
+               (f/doc conn doc-id)
+               (f/delete!))]
+      ident))
 
   (related-query
     [_ context params]
@@ -106,9 +142,15 @@
     (prn query)
     )
 
+  (validator
+    [_]
+    (get params ::validator))
+
   )
 
-(def fs (FirestoreAdapter. nil))
+(def fs
+  (FirestoreAdapter.
+   {::validator (MalliValidator.)}))
 
 (comment
 

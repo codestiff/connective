@@ -107,8 +107,22 @@
       (is (nil? (entity/persisted-value-of-entity entity)))
 
       (is (= expected-ident (core/ident entity)))
+      ))
 
-      )))
+  (testing "validation fails"
+    (let [attrs {:sku "ff-0012"
+                 :name 2
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price "hello"}]
+
+      (is (thrown?
+           clojure.lang.ExceptionInfo
+           (core/init-entity
+            fs
+            context
+            {::entity/kind ::items
+             ::entity/attributes attrs}))))
+    ))
 
 (deftest a-basic-write-entity-test
   (testing "an example write entity test"
@@ -179,6 +193,34 @@
       (is (= ident (core/ident read-entity)))
 
       )))
+
+(deftest a-basic-delete-entity-test
+  (testing "an example delete entity test"
+    (let [attrs {:sku "ff-0012"
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+
+          original-entity (core/init-entity
+                           fs
+                           context
+                           {::entity/kind ::items
+                            ::entity/attributes attrs})
+
+          _ (core/write-entity
+             fs
+             context
+             original-entity)
+
+          ident (entity/ident-of-entity original-entity)
+
+          deleted-ident (core/delete-entity
+                         fs
+                         context
+                         ident)]
+
+      (is (nil? (core/read-entity fs context ident))))
+    ))
 
 (comment
 

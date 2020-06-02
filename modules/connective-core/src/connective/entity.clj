@@ -1,5 +1,6 @@
 (ns connective.entity
   (:require
+   [connective.validator :as validator]
    [connective.adapter :as adapter]))
 
 (defn schema-of-kind
@@ -58,9 +59,21 @@
   (assert (some? kind))
   kind)
 
+(defn entity-schema
+  [{::keys [entity-schema]}]
+  (assert (some? entity-schema))
+  entity-schema)
+
 (defn persisted-value-of-entity
   [entity]
   (get (context-of-entity entity) ::persisted-value))
+
+(defn schema-of-entity
+  [{::keys [schema]
+    :as context}
+   entity]
+  (assert (some? schema))
+  (schema-of-kind schema (kind-of-entity entity)))
 
 (defn assoc-ident
   [{::keys [ident]
@@ -116,33 +129,35 @@
    entity
    (keys (relationships-of-entity entity))))
 
-(defn validate-attributes
-  [a b c]
-  ;; TODO: implement
-  a
-  )
+(defn validate-entity
+  [entity
+   connective
+   context]
+  (let [v (adapter/validator connective)]
+    (cond
+      (nil? v) entity
+      (validator/validate v context entity) entity
+      :else (throw
+             (ex-info
+              "Failed Validation"
+              (validator/explain v context entity))))))
 
 (defn prepare-entity
   [connective
-   {::keys [schema]
-    :as context}
-   {::keys [kind]
-    :as entity}]
-  (assert (some? kind))
-  (let [entity-schema (schema-of-kind schema kind)
+   context
+   entity]
+  (let [entity-schema (schema-of-entity context entity)
         context (assoc context ::entity-schema entity-schema)
         entity (->
                 (merge {::attributes {}} entity)
                 (assoc-reference-attributes-of-relationships connective context)
-                (validate-attributes connective entity-schema))]
+                (validate-entity connective context))]
     (assoc-ident entity entity-schema)))
 
 (defn init
   [connective
-   {::keys [schema]
-    :as context}
-   {::keys [kind]
-    :as entity}]
+   context
+   entity]
   (->
    (prepare-entity connective context entity)
    (assoc-context {})))

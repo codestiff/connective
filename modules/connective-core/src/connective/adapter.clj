@@ -37,4 +37,6 @@
     [_ context entity]
     "given a context, params of the related entity")
 
-  )
+  (validator
+    [_]
+    "an optional validator used to validate entities"))

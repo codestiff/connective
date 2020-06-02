@@ -24,6 +24,9 @@
 (defn-of-adaptor read-entity)
 (defn-of-adaptor delete-entity)
 (defn-of-adaptor reference-value)
+(defn validator
+  [a]
+  (adapter/validator a))
 
 (defn kind-of-definition
   [{::entity/keys [kind]}]

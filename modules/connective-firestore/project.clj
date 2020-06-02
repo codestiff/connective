@@ -6,5 +6,6 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [codestiff/connective.core "0.1.0-SNAPSHOT"]
                  [polvo/firestore-clj "1.2.1"]
-                 [ring/ring-codec "1.1.2"]]
+                 [ring/ring-codec "1.1.2"]
+                 [metosin/malli "0.0.1-20200404.091302-14"]]
   :repl-options {:init-ns connective.firestore})
