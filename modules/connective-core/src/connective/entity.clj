@@ -127,6 +127,10 @@
   ;; relationships that have been added
   ;; otherwise do not change the relationship
   ;; attributes
+
+  ;; we may need 2 versions of this function
+  ;; when when before a write
+  ;; and the other when first loading...
   (reduce
    (fn [entity* rel-key]
      (assert
@@ -136,7 +140,7 @@
        (if (= rel-type ::reference)
          (let [related-entity (get-in entity* [::relationships rel-key])]
            (if (nil? related-entity)
-             entity*
+             (assoc-in entity* [::attributes ref-attribute] nil)
              (let [ref-val (adapter/reference-value connective context related-entity)]
                (assoc-in entity* [::attributes ref-attribute] ref-val))))
          entity*)))

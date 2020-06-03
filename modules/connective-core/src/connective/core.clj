@@ -59,13 +59,25 @@
     (some? relation)
     (some? relationship-key)
     (some? recur-fn)))
-  (let [[rel-type {::entity/keys [kind]}] relation]
+  (let [[rel-type {::entity/keys [kind ref-attribute]}] relation]
     (if (or (nil? params)
             (contains? params relationship-key))
       (let [params* (get params relationship-key)]
         (case rel-type
-          ::entity/many (doall (for [e entity] (recur-fn a context e params*)))
-          ::entity/reference (recur-fn a (dissoc context ::entity/parent) entity params*)))
+          ::entity/many (doall
+                         (for [e entity]
+                           (recur-fn
+                            a
+                            (assoc
+                             context
+                             ::entity/ref-attribute ref-attribute)
+                            e
+                            params*)))
+          ::entity/reference (recur-fn
+                              a
+                              (dissoc context ::entity/parent ::entity/ref-attribute)
+                              entity
+                              params*)))
       entity)))
 
 (defn init-rels
