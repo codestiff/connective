@@ -17,6 +17,10 @@
   [{::keys [relationships]}]
   relationships)
 
+(defn assoc-relationships
+  [entity relationships]
+  (assoc entity ::relationships relationships))
+
 (defn attributes-of-entity
   [{::keys [attributes]}]
   (assert (some? attributes))
@@ -100,6 +104,14 @@
   (assert (contains? relationships relationship-key))
   (get relationships relationship-key))
 
+(defn relation-of-entity
+  [context
+   entity
+   relationship-key]
+  (->
+   (schema-of-entity context entity)
+   (relation-of-entity-schema relationship-key)))
+
 (defn assoc-reference-attributes-of-relationships
   "Takes a context (db, schema)
   the schema for entity,
@@ -122,9 +134,11 @@
 
      (let [[rel-type {::keys [kind ref-attribute]}] (relation-of-entity-schema entity-schema rel-key)]
        (if (= rel-type ::reference)
-         (let [related-entity (get-in entity* [::relationships rel-key])
-               ref-val (adapter/reference-value connective context related-entity)]
-           (assoc-in entity* [::attributes ref-attribute] ref-val))
+         (let [related-entity (get-in entity* [::relationships rel-key])]
+           (if (nil? related-entity)
+             entity*
+             (let [ref-val (adapter/reference-value connective context related-entity)]
+               (assoc-in entity* [::attributes ref-attribute] ref-val))))
          entity*)))
    entity
    (keys (relationships-of-entity entity))))

@@ -111,6 +111,14 @@
           (entity/assoc-persisted-value entity))
         nil)))
 
+  (reference-value
+    [_
+     {::entity/keys [conn]
+      :as context}
+     entity]
+    (let [doc-id (doc-id entity)]
+      (f/doc conn doc-id)))
+
   (delete-entity
     [_
      {::entity/keys [conn]
