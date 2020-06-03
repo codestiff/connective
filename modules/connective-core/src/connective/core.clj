@@ -1,6 +1,7 @@
 (ns connective.core
   (:require
    [connective.adapter :as adapter]
+   [connective.schema :as schema]
    [connective.entity :as entity]))
 
 (defmacro defn-of-adaptor
@@ -21,25 +22,11 @@
   [a]
   (adapter/validator a))
 
-(defn kind-of-definition
-  [{::entity/keys [kind]}]
-  (assert (some? kind))
-  kind)
-
-(defn compile-schema
-  [coll]
-  (reduce
-   (fn
-     [cp definition]
-     (let [k (kind-of-definition definition)]
-       (assert (not (contains? cp k)))
-       (assoc cp k definition)))
-   {}
-   coll))
-
 (def attributes entity/attributes-of-entity)
 (def context entity/context-of-entity)
 (def ident entity/ident-of-entity)
+
+(def compile-schema schema/compile)
 
 (defmacro def-collection-fn
   [sym-plural sym-singular]
@@ -72,20 +59,25 @@
     (some? relation)
     (some? relationship-key)
     (some? recur-fn)))
-  (let [[rel-type args] relation]
+  (let [[rel-type {::entity/keys [kind]}] relation]
     (if (or (nil? params)
             (contains? params relationship-key))
       (let [params* (get params relationship-key)]
-        (cond
-          (= rel-type ::entity/many) (doall (for [e entity] (recur-fn a context e params*)))
-          (= rel-type ::entity/reference) (recur-fn a context entity params*)))
+        (case rel-type
+          ::entity/many (doall (for [e entity] (recur-fn a context e params*)))
+          ::entity/reference (recur-fn a (dissoc context ::entity/parent) entity params*)))
       entity)))
 
 (defn init-rels
   ([a context entity]
    (init-rels a context entity nil))
-  ([a context entity params]
-   (let [entity-with-rels (update-rels
+  ([a
+    {::entity/keys [parent]
+     :as context}
+    entity
+    params]
+   (let [;;entity (assoc-parent-reference entity 
+         entity-with-rels (update-rels
                            entity
                            (fn
                              [rels]
@@ -97,6 +89,7 @@
                                       related-params (get params kind)
                                       context (assoc
                                                context
+                                               ::entity/parent entity
                                                ::entity/relation relation
                                                ::entity/relationship-key k
                                                ::recur-fn init-rels)
@@ -104,8 +97,7 @@
                                       related-entity (init-rel a context related-entity related-params)]
                                   (assoc rels* k related-entity)))
                               {}
-                              rels)))
-         ]
+                              rels)))]
      (init-entity
       a
       context

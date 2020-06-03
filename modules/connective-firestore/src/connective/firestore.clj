@@ -116,8 +116,11 @@
      {::entity/keys [conn]
       :as context}
      entity]
-    (let [doc-id (doc-id entity)]
-      (f/doc conn doc-id)))
+    (assert (some? entity))
+    (if (some? (entity/ident-of-entity entity))
+      (let [doc-id (doc-id entity)]
+        (f/doc conn doc-id))
+      ::unknown))
 
   (delete-entity
     [_

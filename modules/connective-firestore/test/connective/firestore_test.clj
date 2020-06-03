@@ -66,7 +66,8 @@
    ])
 
 (def c-schema
-  (core/compile-schema schema))
+  (core/compile-schema schema)
+  )
 
 (def context
   {::entity/schema c-schema
@@ -238,7 +239,7 @@
       (is (nil? (core/read-entity fs context ident))))
     ))
 
-(deftest an-example-init-relationships-test
+#_(deftest an-example-init-relationships-test
   (testing "a example of reading relationships"
     (let [keyword-entities (fn
                              [paragraph]
