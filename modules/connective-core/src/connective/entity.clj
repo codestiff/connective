@@ -131,6 +131,8 @@
   ;; we may need 2 versions of this function
   ;; when when before a write
   ;; and the other when first loading...
+  ;; maybe if the context includes the
+  ;; the parent entity and it's unknown id
   (reduce
    (fn [entity* rel-key]
      (assert
