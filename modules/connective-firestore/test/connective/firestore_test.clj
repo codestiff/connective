@@ -26,6 +26,33 @@
      []
      coll)))
 
+(defn without-rels
+  [entity]
+  (dissoc entity ::entity/relationships))
+
+(defn without-attrs
+  [entity key-coll]
+  (reduce
+   (fn [e* attr-key]
+     (update e* ::entity/attributes dissoc attr-key))
+   entity
+   key-coll))
+
+(defn without
+  [entity {:keys [attrs]
+           :as opts}]
+  (cond-> entity
+    (some? attrs) (without-attrs attrs)
+    (contains? opts :rels) (without-rels)))
+
+(defn into-rels
+  [entity key-coll]
+  (reduce
+   (fn [e* rel-key]
+     (get (core/relationships e*) rel-key))
+   entity
+   key-coll))
+
 (def schema
   [
    {::entity/kind ::items
@@ -297,25 +324,77 @@
           shopping-cart {::entity/kind ::shopping-carts
                          ::entity/attributes {:user-id "user-1"}
                          ::entity/relationships {:shopping-cart-items [shopping-cart-item-1
-                                                                       shopping-cart-item-2]}}]
+                                                                       shopping-cart-item-2]}}
+
+
+          s-cart (core/init-rels fs context shopping-cart)
+          ]
 
       (is
-       (some?
-        (core/init-rels
-         fs
-         context
-         shopping-cart)))
+       (= {::entity/kind ::shopping-carts
+           ::entity/ident {::entity/kind ::shopping-carts
+                           ::entity/id "user-1"}
+           ::entity/context {}
+           ::entity/attributes {:user-id "user-1"}} (without-rels s-cart)))
 
-      #_(is (= nil (core/init-rels fs context shopping-cart)))
+      (let [expected [{::entity/kind ::shopping-cart-items
+                       ::entity/ident {::entity/kind ::shopping-cart-items
+                                       ::entity/id ::entity/pending}
+                       ::entity/context {}
+                       ::entity/attributes {:shopping-cart-ref ::entity/parent}}
 
-      #_(is
-       (some?
-        (core/init-rels
-         fs
-         context
-         shopping-cart
-         {::shopping-cart-items [{::item [{::keywords nil}]}]})))
+                      {::entity/kind ::shopping-cart-items
+                       ::entity/ident {::entity/kind ::shopping-cart-items
+                                       ::entity/id ::entity/pending}
+                       ::entity/context {}
+                       ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
 
+            actual (->
+                    s-cart
+                    (into-rels [:shopping-cart-items])
+                    (as-> $
+                        (map
+                         #(without % {:attrs [:item-ref] :rels nil})
+                         $)))]
+        (is (= expected actual)))
+
+      (let [expected {::entity/kind ::items
+                      ::entity/ident {::entity/kind ::items
+                                      ::entity/id "ff-0012"}
+                      ::entity/context {}
+                      ::entity/attributes {:sku "ff-0012"
+                                           :name "kitten"
+                                           :description item-1-description
+                                           :price 128.99}}
+
+            actual (->
+                    s-cart
+                    (into-rels [:shopping-cart-items])
+                    first
+                    (into-rels [:item])
+                    (without {:rels nil}))]
+
+        (is (= expected actual)))
+
+      (let [expected (for [e (keyword-entities item-1-description)]
+                       (assoc
+                        e
+                        ::entity/ident
+                        {::entity/kind ::item-search-keywords
+                         ::entity/id ::entity/pending}
+                        ::entity/context {}))
+
+            actual (->
+                    s-cart
+                    (into-rels [:shopping-cart-items])
+                    first
+                    (into-rels [:item :keywords])
+                    (as-> $
+                        (map
+                         #(without % {:attrs [:item-ref] :rels nil})
+                         $)
+                        ))]
+        (is (= expected actual)))
       )))
 
 (comment

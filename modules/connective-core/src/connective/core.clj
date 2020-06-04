@@ -25,6 +25,7 @@
 (def attributes entity/attributes-of-entity)
 (def context entity/context-of-entity)
 (def ident entity/ident-of-entity)
+(def relationships entity/relationships-of-entity)
 
 (def compile-schema schema/compile)
 
