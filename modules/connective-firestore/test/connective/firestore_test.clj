@@ -9,6 +9,23 @@
 (defonce db
   (f/emulator-client "project-local-1" "localhost:8080"))
 
+(defn id-fn-refs
+  [& coll]
+  (fn
+    [attrs]
+    (reduce
+     (fn
+       [id [attr-key ref?]]
+       (let [attr (get attrs attr-key)]
+         (if ref?
+           (cond
+             (= attr ::entity/pending) (reduced ::entity/pending)
+             (= attr ::entity/parent) (reduced ::entity/pending)
+             :else (f/id attr))
+           (conj id attr))))
+     []
+     coll)))
+
 (def schema
   [
    {::entity/kind ::items
@@ -21,7 +38,7 @@
                                                       ::entity/ref-attribute :item-ref}]}}
 
    {::entity/kind ::item-search-keywords
-    ::entity/id-fn (juxt :keyword (comp f/id :item-ref))
+    ::entity/id-fn (id-fn-refs [:keyword] [:item-ref true])
     ::entity/attributes [:map
                          [:keyword string?]
                          [:item-ref some?]]
@@ -29,9 +46,7 @@
                                                        ::entity/ref-attribute :item-ref}]}}
 
    {::entity/kind ::shopping-cart-items
-    ::entity/id-fn (juxt
-                          (comp f/id :shopping-cart-ref)
-                          (comp f/id :item-ref))
+    ::entity/id-fn (id-fn-refs [:shopping-cart-ref true] [:item-ref true])
     ::entity/attributes [:map
                          [:shopping-cart-ref some?]
                          [:item-ref some?]]
