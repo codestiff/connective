@@ -6,10 +6,13 @@
 
   :aliases {"docs" ["with-profile" "docs" "codox"]}
   :dependencies [[org.clojure/clojure "1.10.1"]]
+
   :sub [
         "modules/connective-core"
+        "modules/connective-malli"
         "modules/connective-firestore"
         ]
+
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
                     :dependencies [[codestiff/connective.core "0.1.0-SNAPSHOT"]
                                    [codestiff/connective.firestore "0.1.0-SNAPSHOT"]]

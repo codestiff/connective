@@ -1,8 +1,8 @@
 (ns connective.firestore
   (:require
    [ring.util.codec :as codec]
-   [malli.core :as m]
    [firestore-clj.core :as f]
+   [connective.malli :as malli]
    [connective.validator :as validator]
    [connective.adapter :as adapter]
    [connective.entity :as entity]
@@ -45,26 +45,6 @@
                  (assoc e (keyword k) v))
                {} doc)]
     (assoc entity ::entity/attributes attrs)))
-
-(deftype MalliValidator
-    []
-
-  validator/IValidator
-
-  (validate
-    [_ context entity]
-    (let [attrs (core/attributes entity)
-          {::entity/keys [attributes]} (entity/entity-schema context)]
-      (if (nil? attributes)
-        true
-        (m/validate attributes attrs))))
-
-  (explain
-    [_ context entity]
-    (let [attrs (core/attributes entity)
-          {::entity/keys [attributes]} (entity/entity-schema context)]
-      (assert (some? attributes))
-      (m/explain attributes attrs))))
 
 (deftype FirestoreAdapter
     [params]
@@ -157,7 +137,7 @@
 
 (def fs
   (FirestoreAdapter.
-   {::validator (MalliValidator.)}))
+   {::validator (malli/validator)}))
 
 (comment
 
