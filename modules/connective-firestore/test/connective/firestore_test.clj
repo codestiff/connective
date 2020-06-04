@@ -377,12 +377,13 @@
         (is (= expected actual)))
 
       (let [expected (for [e (keyword-entities item-1-description)]
-                       (assoc
+                       (->
                         e
-                        ::entity/ident
-                        {::entity/kind ::item-search-keywords
-                         ::entity/id ::entity/pending}
-                        ::entity/context {}))
+                        (assoc
+                         ::entity/ident {::entity/kind ::item-search-keywords
+                                         ::entity/id ::entity/pending}
+                         ::entity/context {})
+                        (update ::entity/attributes assoc :item-ref ::entity/parent)))
 
             actual (->
                     s-cart
@@ -391,7 +392,7 @@
                     (into-rels [:item :keywords])
                     (as-> $
                         (map
-                         #(without % {:attrs [:item-ref] :rels nil})
+                         #(without % {:rels nil})
                          $)
                         ))]
         (is (= expected actual)))
