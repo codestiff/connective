@@ -52,6 +52,10 @@
   [{::keys [ident]}]
   ident)
 
+(defn ident-of-entity-pending?
+  [entity]
+  (= ::pending (ident-of-entity entity)))
+
 (defn kind-of-entity
   [{::keys [kind]}]
   (assert (some? kind))
@@ -88,14 +92,16 @@
     :as entity}
    {::keys [id-fn]
     :as schema}]
-  (assert (some? id-fn))
   (let [attrs (attributes-of-entity entity)
-        kind (kind-of-entity entity)]
+        kind (kind-of-entity entity)
+        ident (if (nil? id-fn)
+                ::pending
+                {::kind kind
+                 ::id (id-fn attrs)})]
     (assoc
      entity
      ::kind kind
-     ::ident {::kind kind
-              ::id (id-fn attrs)})))
+     ::ident ident)))
 
 (defn entity-schema-contains-relationship?
   [{::keys [relationships] :as schema}
@@ -148,10 +154,10 @@
          (let [related-entity (get-in entity* [::relationships rel-key])]
            (if (nil? related-entity)
              (assoc-in entity* [::attributes ref-attribute] nil)
-             (if (contains? related-entity ::ident)
+             (if (ident-of-entity-pending? related-entity)
+               (assoc-in entity* [::attributes ref-attribute] ::pending)
                (let [ref-val (adapter/reference-value connective context related-entity)]
-                 (assoc-in entity* [::attributes ref-attribute] ref-val))
-               (assoc-in entity* [::attributes ref-attribute] ::pending))))
+                 (assoc-in entity* [::attributes ref-attribute] ref-val)))))
          entity*)))
    entity
    (keys (relationships-of-entity entity))))
@@ -179,10 +185,12 @@
                 (merge {::attributes {}} entity)
                 (assoc-reference-attributes-of-relationships connective context)
                 (validate-entity connective context))]
-    #_(assoc-ident entity entity-schema)
+
     ;; maybe assoc ident should add the ident if id-fn exists
     ;; otherwise set it to ::pending
-    entity))
+    ;; probably a bad idea, but let's keep for now
+    ;; should probably change the name
+    (assoc-ident entity entity-schema)))
 
 (defn init
   [connective
