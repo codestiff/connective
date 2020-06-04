@@ -102,7 +102,7 @@
                                                context
                                                ::entity/relation relation
                                                ::entity/relationship-key k
-                                               ::recur-fn init-rels)
+                                               ::recur-fn init-rels*)
                                       ;; note, related-entity might be multiple
                                       related-entity (init-rel
                                                       a
