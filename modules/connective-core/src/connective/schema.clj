@@ -10,7 +10,7 @@
 (defn default-ref-attribute
   [kind]
   (let [kind-str (name kind)]
-    (keyword kind-str "-ref")))
+    (keyword (str kind-str "-ref"))))
 
 (defn compile-relation
   [definition

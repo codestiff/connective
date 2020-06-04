@@ -17,7 +17,8 @@
                          [:sku string?]
                          [:name string?]
                          [:price double?]]
-    ::entity/relationships {:keywords [::entity/many {::entity/kind ::item-search-keywords}]}}
+    ::entity/relationships {:keywords [::entity/many {::entity/kind ::item-search-keywords
+                                                      ::entity/ref-attribute :item-ref}]}}
 
    {::entity/kind ::item-search-keywords
     ::entity/id-fn (juxt :keyword (comp f/id :item-ref))
@@ -43,7 +44,8 @@
     ::entity/id-fn :user-id
     ::entity/attributes [:map
                          [:user-id string?]]
-    ::entity/relationships {:shopping-cart-items [::entity/many {::entity/kind ::shopping-cart-items}]}}
+    ::entity/relationships {:shopping-cart-items [::entity/many {::entity/kind ::shopping-cart-items
+                                                                 ::entity/ref-attribute :shopping-cart-ref}]}}
 
    {::entity/kind ::payment-methods
     ::entity/id-fn (juxt :user-id :payment-id)
@@ -51,7 +53,8 @@
                          [:user-id string?]
                          [:payment-id string?]
                          [:credit-card-number string?]]
-    ::entity/relationships {:orders [::entity/many {::entity/kind ::orders}]}}
+    ::entity/relationships {:orders [::entity/many {::entity/kind ::orders
+                                                    ::entity/ref-attribute :payment-method-ref}]}}
 
    {::entity/kind ::orders
     ::entity/id-fn :order-id
@@ -239,7 +242,7 @@
       (is (nil? (core/read-entity fs context ident))))
     ))
 
-#_(deftest an-example-init-relationships-test
+(deftest an-example-init-relationships-test
   (testing "a example of reading relationships"
     (let [keyword-entities (fn
                              [paragraph]
@@ -268,8 +271,7 @@
                                        :description item-2-description
                                        :price 4.78}
 
-                  ::entity/relationships {:item item-1
-                                          :keywords (keyword-entities item-2-description)}}
+                  ::entity/relationships {:keywords (keyword-entities item-2-description)}}
 
           shopping-cart-item-1 {::entity/kind ::shopping-cart-items
                                 ::entity/relationships {:item item-1}}

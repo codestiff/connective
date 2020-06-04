@@ -26,6 +26,10 @@
   (assert (some? attributes))
   attributes)
 
+(defn assoc-attributes
+  [entity attrs]
+  (assoc entity ::attributes attrs))
+
 (defn context-of-entity
   [{::keys [context]}]
   context)
@@ -99,7 +103,8 @@
   (contains? relationships rel-key))
 
 (defn relation-of-entity-schema
-  [{::keys [relationships]}
+  [{::keys [relationships]
+    :as e}
    relationship-key]
   (assert (contains? relationships relationship-key))
   (get relationships relationship-key))
@@ -143,8 +148,10 @@
          (let [related-entity (get-in entity* [::relationships rel-key])]
            (if (nil? related-entity)
              (assoc-in entity* [::attributes ref-attribute] nil)
-             (let [ref-val (adapter/reference-value connective context related-entity)]
-               (assoc-in entity* [::attributes ref-attribute] ref-val))))
+             (if (contains? related-entity ::ident)
+               (let [ref-val (adapter/reference-value connective context related-entity)]
+                 (assoc-in entity* [::attributes ref-attribute] ref-val))
+               (assoc-in entity* [::attributes ref-attribute] ::pending))))
          entity*)))
    entity
    (keys (relationships-of-entity entity))))
@@ -172,7 +179,10 @@
                 (merge {::attributes {}} entity)
                 (assoc-reference-attributes-of-relationships connective context)
                 (validate-entity connective context))]
-    (assoc-ident entity entity-schema)))
+    #_(assoc-ident entity entity-schema)
+    ;; maybe assoc ident should add the ident if id-fn exists
+    ;; otherwise set it to ::pending
+    entity))
 
 (defn init
   [connective
