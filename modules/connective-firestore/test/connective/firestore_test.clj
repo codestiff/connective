@@ -291,7 +291,7 @@
          context
          shopping-cart)))
 
-      (is (= nil (core/init-rels fs context shopping-cart)))
+      #_(is (= nil (core/init-rels fs context shopping-cart)))
 
       #_(is
        (some?
