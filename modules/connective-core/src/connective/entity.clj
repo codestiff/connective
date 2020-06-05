@@ -160,6 +160,10 @@
                  (assoc-in entity* [::attributes ref-attribute] ref-val)))))
          entity*)))
    entity
+   ;; this is probably a bug we need remove
+   ;; references that are part of the
+   ;; relationship schema, even if the
+   ;; relationship is not set
    (keys (relationships-of-entity entity))))
 
 (defn validate-entity

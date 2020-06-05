@@ -4,10 +4,18 @@
    [connective.firestore :refer :all]
    [connective.core :as core]
    [connective.entity :as entity]
-   [firestore-clj.core :as f]))
+   [firestore-clj.core :as f]
+   [ring.util.codec :as codec]))
 
 (defonce db
   (f/emulator-client "project-local-1" "localhost:8080"))
+
+(defn encode-id
+  [v]
+  (->
+   v
+   pr-str
+   codec/url-encode))
 
 (defn id-fn-refs
   [& coll]
@@ -284,119 +292,193 @@
       (is (nil? (core/read-entity fs context ident))))
     ))
 
+(defmacro with-example-entity-tree
+  [& body]
+  `(let [~'keyword-entities ~'(fn
+                                [paragraph]
+                                (let [keywords (->>
+                                                (clojure.string/split paragraph #"\s+")
+                                                (concat [])
+                                                (map #(clojure.string/replace % #"\W" "")))]
+                                  (for [kw keywords]
+                                    {::entity/kind ::item-search-keywords
+                                     ::entity/attributes {:keyword kw}})))
+
+         ~'item-1-description "So many wonder kittens to play with. Try them all."
+         ~'item-2-description "Cold cereal. Goes great with milk!"
+
+         ~'item-1 {::entity/kind ::items
+                   ::entity/attributes {:sku "ff-0012"
+                                        :name "kitten"
+                                        :description ~'item-1-description
+                                        :price 128.99}
+
+                   ::entity/relationships {:keywords ~'(keyword-entities item-1-description)}}
+
+         ~'item-2 {::entity/kind ::items
+                   ::entity/attributes {:sku "gd-4921"
+                                        :name "cereal"
+                                        :description ~'item-2-description
+                                        :price 4.78}
+
+                   ::entity/relationships {:keywords ~'(keyword-entities item-2-description)}}
+
+         ~'shopping-cart-item-1 {::entity/kind ::shopping-cart-items
+                                 ::entity/relationships {:item ~'item-1}}
+
+         ~'shopping-cart-item-2 {::entity/kind ::shopping-cart-items
+                                 ::entity/relationships {:item ~'item-2}}
+
+         ~'shopping-cart {::entity/kind ::shopping-carts
+                          ::entity/attributes {:user-id "user-1"}
+                          ::entity/relationships {:shopping-cart-items [~'shopping-cart-item-1
+                                                                        ~'shopping-cart-item-2]}}
+         ]
+     ~@body))
+
 (deftest an-example-init-relationships-test
   (testing "a example of reading relationships"
-    (let [keyword-entities (fn
-                             [paragraph]
-                             (let [keywords (->>
-                                             (clojure.string/split paragraph #"\s+")
-                                             (concat [])
-                                             (map #(clojure.string/replace % #"\W" "")))]
-                               (for [kw keywords]
-                                 {::entity/kind ::item-search-keywords
-                                  ::entity/attributes {:keyword kw}})))
+    (with-example-entity-tree
+      (let [s-cart (core/init-rels fs context shopping-cart)]
+        (is
+         (= {::entity/kind ::shopping-carts
+             ::entity/ident {::entity/kind ::shopping-carts
+                             ::entity/id "user-1"}
+             ::entity/context {}
+             ::entity/attributes {:user-id "user-1"}} (without-rels s-cart)))
 
-          item-1-description "So many wonder kittens to play with. Try them all."
-          item-2-description "Cold cereal. Goes great with milk!"
-
-          item-1 {::entity/kind ::items
-                  ::entity/attributes {:sku "ff-0012"
-                                       :name "kitten"
-                                       :description item-1-description
-                                       :price 128.99}
-
-                  ::entity/relationships {:keywords (keyword-entities item-1-description)}}
-
-          item-2 {::entity/kind ::items
-                  ::entity/attributes {:sku "gd-4921"
-                                       :name "cereal"
-                                       :description item-2-description
-                                       :price 4.78}
-
-                  ::entity/relationships {:keywords (keyword-entities item-2-description)}}
-
-          shopping-cart-item-1 {::entity/kind ::shopping-cart-items
-                                ::entity/relationships {:item item-1}}
-
-          shopping-cart-item-2 {::entity/kind ::shopping-cart-items
-                                ::entity/relationships {:item item-2}}
-
-          shopping-cart {::entity/kind ::shopping-carts
-                         ::entity/attributes {:user-id "user-1"}
-                         ::entity/relationships {:shopping-cart-items [shopping-cart-item-1
-                                                                       shopping-cart-item-2]}}
-
-
-          s-cart (core/init-rels fs context shopping-cart)
-          ]
-
-      (is
-       (= {::entity/kind ::shopping-carts
-           ::entity/ident {::entity/kind ::shopping-carts
-                           ::entity/id "user-1"}
-           ::entity/context {}
-           ::entity/attributes {:user-id "user-1"}} (without-rels s-cart)))
-
-      (let [expected [{::entity/kind ::shopping-cart-items
-                       ::entity/ident {::entity/kind ::shopping-cart-items
-                                       ::entity/id ::entity/pending}
-                       ::entity/context {}
-                       ::entity/attributes {:shopping-cart-ref ::entity/parent}}
-
-                      {::entity/kind ::shopping-cart-items
-                       ::entity/ident {::entity/kind ::shopping-cart-items
-                                       ::entity/id ::entity/pending}
-                       ::entity/context {}
-                       ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
-
-            actual (->
-                    s-cart
-                    (into-rels [:shopping-cart-items])
-                    (as-> $
-                        (map
-                         #(without % {:attrs [:item-ref] :rels nil})
-                         $)))]
-        (is (= expected actual)))
-
-      (let [expected {::entity/kind ::items
-                      ::entity/ident {::entity/kind ::items
-                                      ::entity/id "ff-0012"}
-                      ::entity/context {}
-                      ::entity/attributes {:sku "ff-0012"
-                                           :name "kitten"
-                                           :description item-1-description
-                                           :price 128.99}}
-
-            actual (->
-                    s-cart
-                    (into-rels [:shopping-cart-items])
-                    first
-                    (into-rels [:item])
-                    (without {:rels nil}))]
-
-        (is (= expected actual)))
-
-      (let [expected (for [e (keyword-entities item-1-description)]
-                       (->
-                        e
-                        (assoc
-                         ::entity/ident {::entity/kind ::item-search-keywords
+        (let [expected [{::entity/kind ::shopping-cart-items
+                         ::entity/ident {::entity/kind ::shopping-cart-items
                                          ::entity/id ::entity/pending}
-                         ::entity/context {})
-                        (update ::entity/attributes assoc :item-ref ::entity/parent)))
+                         ::entity/context {}
+                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}
 
-            actual (->
-                    s-cart
-                    (into-rels [:shopping-cart-items])
-                    first
-                    (into-rels [:item :keywords])
-                    (as-> $
-                        (map
-                         #(without % {:rels nil})
-                         $)
+                        {::entity/kind ::shopping-cart-items
+                         ::entity/ident {::entity/kind ::shopping-cart-items
+                                         ::entity/id ::entity/pending}
+                         ::entity/context {}
+                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      (as-> $
+                          (map
+                           #(without % {:attrs [:item-ref] :rels nil})
+                           $)))]
+          (is (= expected actual)))
+
+        (let [expected {::entity/kind ::items
+                        ::entity/ident {::entity/kind ::items
+                                        ::entity/id "ff-0012"}
+                        ::entity/context {}
+                        ::entity/attributes {:sku "ff-0012"
+                                             :name "kitten"
+                                             :description item-1-description
+                                             :price 128.99}}
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      first
+                      (into-rels [:item])
+                      (without {:rels nil}))]
+
+          (is (= expected actual)))
+
+        (let [expected (for [e (keyword-entities item-1-description)]
+                         (->
+                          e
+                          (assoc
+                           ::entity/ident {::entity/kind ::item-search-keywords
+                                           ::entity/id ::entity/pending}
+                           ::entity/context {})
+                          (update ::entity/attributes assoc :item-ref ::entity/parent)))
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      first
+                      (into-rels [:item :keywords])
+                      (as-> $
+                          (map
+                           #(without % {:rels nil})
+                           $)
                         ))]
-        (is (= expected actual)))
-      )))
+          (is (= expected actual))))
+        )))
+
+#_(deftest an-example-write-relationships-test
+  (testing "a example of reading relationships"
+    (with-example-entity-tree
+      (let [s-cart (core/write-rels fs context shopping-cart)]
+        (is
+         (= {::entity/kind ::shopping-carts
+             ::entity/ident {::entity/kind ::shopping-carts
+                             ::entity/id "user-1"}
+             ::entity/context {}
+             ::entity/attributes {:user-id "user-1"}} (without-rels s-cart)))
+
+        (let [expected [{::entity/kind ::shopping-cart-items
+                         ::entity/ident {::entity/kind ::shopping-cart-items
+                                         ::entity/id (encode-id ["user-1" "ff00-12"])}
+                         ::entity/context {}
+                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}
+
+                        {::entity/kind ::shopping-cart-items
+                         ::entity/ident {::entity/kind ::shopping-cart-items
+                                         ::entity/id (encode-id ["user-2" "gd-4921"])}
+                         ::entity/context {}
+                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      (as-> $
+                          (map
+                           #(without % {:attrs [:item-ref] :rels nil})
+                           $)))]
+          (is (= expected actual)))
+
+        (let [expected {::entity/kind ::items
+                        ::entity/ident {::entity/kind ::items
+                                        ::entity/id "ff-0012"}
+                        ::entity/context {}
+                        ::entity/attributes {:sku "ff-0012"
+                                             :name "kitten"
+                                             :description item-1-description
+                                             :price 128.99}}
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      first
+                      (into-rels [:item])
+                      (without {:rels nil}))]
+
+          (is (= expected actual)))
+
+        (let [expected (for [e (keyword-entities item-1-description)]
+                         (->
+                          e
+                          (assoc
+                           ::entity/ident {::entity/kind ::item-search-keywords
+                                           ::entity/id ::entity/pending}
+                           ::entity/context {})
+                          (update ::entity/attributes assoc :item-ref ::entity/parent)))
+
+              actual (->
+                      s-cart
+                      (into-rels [:shopping-cart-items])
+                      first
+                      (into-rels [:item :keywords])
+                      (as-> $
+                          (map
+                           #(without % {:rels nil})
+                           $)
+                        ))]
+          (is (= expected actual))))
+        )))
 
 (comment
 
