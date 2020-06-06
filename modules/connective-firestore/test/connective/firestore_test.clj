@@ -28,8 +28,7 @@
          (if ref?
            (cond
              (= attr ::entity/pending) (reduced ::entity/pending)
-             (= attr ::entity/parent) (reduced ::entity/pending)
-             :else (f/id attr))
+             :else (conj id (f/id attr)))
            (conj id attr))))
      []
      coll)))
@@ -349,13 +348,13 @@
 
         (let [expected [{::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id ::entity/pending}
+                                         ::entity/id (mapv encode-id ["user-1" "ff-0012"])}
                          ::entity/context {}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}
 
                         {::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id ::entity/pending}
+                                         ::entity/id (mapv encode-id ["user-1" "gd-4921"])}
                          ::entity/context {}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
 
@@ -391,7 +390,7 @@
                           e
                           (assoc
                            ::entity/ident {::entity/kind ::item-search-keywords
-                                           ::entity/id ::entity/pending}
+                                           ::entity/id [(-> e ::entity/attributes :keyword) (encode-id "ff-0012")]}
                            ::entity/context {})
                           (update ::entity/attributes assoc :item-ref ::entity/parent)))
 

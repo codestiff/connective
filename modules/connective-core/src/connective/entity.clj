@@ -17,6 +17,10 @@
   [{::keys [relationships]}]
   relationships)
 
+(defn relationships-of-schema
+  [{::keys [relationships]}]
+  relationships)
+
 (defn assoc-relationships
   [entity relationships]
   (assoc entity ::relationships relationships))
@@ -33,6 +37,13 @@
 (defn context-of-entity
   [{::keys [context]}]
   context)
+
+(defn simple-entity
+  [entity]
+  (->
+   entity
+   (select-keys [::attributes ::ident ::kind ::relationships])
+   (update ::relationships keys)))
 
 (defn assoc-context
   [entity context]
@@ -123,6 +134,38 @@
    (schema-of-entity context entity)
    (relation-of-entity-schema relationship-key)))
 
+(defn relationship-key-of-reference-relation-of-entity
+  [context
+   entity
+   {::keys [ref-attribute]}]
+  (let [schema (schema-of-entity context entity)
+        rels (relationships-of-schema schema)]
+    (reduce
+     (fn [a [k [rel-type rel-opts]]]
+       (if (and (= rel-type ::reference)
+                (= ref-attribute (::ref-attribute rel-opts)))
+         (reduced k)
+         a))
+     nil
+     rels)))
+
+(defn relationship-groups-of-entity
+  [context
+   entity]
+  (reduce
+   (fn
+     [ctx [k related-entity]]
+     (let [[rel-type _ :as relation] (relation-of-entity context entity k)]
+       (update
+        ctx
+        rel-type
+        conj
+        {::relationship-key k
+         ::relation relation
+         ::related-entity related-entity})))
+   {}
+   (relationships-of-entity entity)))
+
 (defn assoc-reference-attributes-of-relationships
   "Takes a context (db, schema)
   the schema for entity,
@@ -134,37 +177,24 @@
    connective
    {::keys [entity-schema]
     :as context}]
-  ;; this should only overwrite
-  ;; relationships that have been added
-  ;; otherwise do not change the relationship
-  ;; attributes
-
-  ;; we may need 2 versions of this function
-  ;; when when before a write
-  ;; and the other when first loading...
-  ;; maybe if the context includes the
-  ;; the parent entity and it's unknown id
   (reduce
-   (fn [entity* rel-key]
-     (assert
-      (entity-schema-contains-relationship? entity-schema rel-key))
+   (fn [entity* {::keys [relationship-key
+                         relation
+                         related-entity]}]
+     (let [[_ {::keys [ref-attribute]}] relation]
+       (cond
+         (= related-entity ::parent)
+         (assoc-in entity* [::attributes ref-attribute] ::parent)
 
-     (let [[rel-type {::keys [kind ref-attribute]}] (relation-of-entity-schema entity-schema rel-key)]
-       (if (= rel-type ::reference)
-         (let [related-entity (get-in entity* [::relationships rel-key])]
-           (if (nil? related-entity)
-             (assoc-in entity* [::attributes ref-attribute] nil)
-             (if (ident-of-entity-pending? related-entity)
-               (assoc-in entity* [::attributes ref-attribute] ::pending)
-               (let [ref-val (adapter/reference-value connective context related-entity)]
-                 (assoc-in entity* [::attributes ref-attribute] ref-val)))))
-         entity*)))
+         (nil? related-entity)
+         (assoc-in entity* [::attributes ref-attribute] nil)
+
+         :else (if (ident-of-entity-pending? related-entity)
+                 (assoc-in entity* [::attributes ref-attribute] ::pending)
+                 (let [ref-val (adapter/reference-value connective context related-entity)]
+                   (assoc-in entity* [::attributes ref-attribute] ref-val))))))
    entity
-   ;; this is probably a bug we need remove
-   ;; references that are part of the
-   ;; relationship schema, even if the
-   ;; relationship is not set
-   (keys (relationships-of-entity entity))))
+   (get (relationship-groups-of-entity context entity) ::reference)))
 
 (defn validate-entity
   [entity
