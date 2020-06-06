@@ -202,7 +202,7 @@
   (let [new-rels (upfn (entity/relationships-of-entity entity))]
     (entity/assoc-relationships entity new-rels)))
 
-(defn- write-rels*
+#_(defn- write-rels*
   ([a
     {::entity/keys [parent]
      ::keys [params]
@@ -244,7 +244,7 @@
              )
      )))
 
-(defn write-rels
+#_(defn write-rels
   ([a context entity]
    (write-rels a context entity nil))
   ([a
