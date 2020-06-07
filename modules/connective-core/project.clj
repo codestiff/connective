@@ -7,15 +7,4 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [com.taoensso/timbre "4.10.0"]]
 
-  :aliases {"full" ["do"
-                    ["clean"]
-                    ["ancient"]
-                    ["test"]]}
-
-  :codox {:output-path "codox"
-          :metadata {:doc/format :markdown}
-          :source-uri "https://github.com/codestiff/connective/blob/{version}/{filepath}#L{line}"}
-
-  :plugins [[lein-codox "0.10.7"]
-            [lein-ancient "0.6.15"]]
   :repl-options {:init-ns connective.core})
