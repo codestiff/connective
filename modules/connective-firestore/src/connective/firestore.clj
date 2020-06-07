@@ -6,6 +6,7 @@
    [connective.adapter :as adapter]
    [connective.entity :as entity]
    [connective.firestore.entity.query :as e.query]
+   [connective.firestore.query :as query]
    [connective.firestore.utils :as utils]
    [connective.core :as core]))
 
@@ -84,22 +85,39 @@
      context
      {::entity/keys [ref-attribute
                      kind
-                     ref-value]}]
-    (prn params)
-    [])
+                     ref-value]
+      :as params}]
+    (e.query/compile
+     {::entity/kind kind
+      ::query/where [[:= ref-attribute ref-value]]}))
 
   (reference-query
     [_
      context
      {::entity/keys [ref-attribute
                      kind
-                     ref-value]}]
-    (prn params)
-    nil)
+                     ref-value]
+      :as params}]
+    (fn
+      [a
+       context]
+      (let [base-entity {::entity/kind kind}
+            entity (utils/assoc-entity-attributes
+                    base-entity
+                    (f/pull ref-value))
+            entity (core/init-entity
+                    a
+                    context
+                    entity)
+            entity (entity/assoc-persisted-value entity)]
+        (println ">>>> read: " (entity/simple-entity entity))
+        entity)))
 
   (execute-query
     [a context query]
-    (e.query/execute a context query))
+    (let [r (e.query/execute a context query)]
+      (println "q result: " r)
+      r))
 
   (validator
     [_]

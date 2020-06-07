@@ -528,13 +528,13 @@
 
              (without s-cart {:rels nil :context nil})))
 
-        #_(is
+        (is
          (=
           (without s-cart {:rels nil :context nil})
           (entity/persisted-value-of-entity s-cart)))
 
 
-        #_(let [expected [{::entity/kind ::shopping-cart-items
+        (let [expected [{::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
                                          ::entity/id (mapv encode-id ["user-1" "ff-0012"])}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}

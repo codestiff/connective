@@ -190,6 +190,9 @@
                          related-entity]}]
      (let [[_ {::keys [ref-attribute]}] relation]
        (cond
+         (= related-entity ::pending)
+         entity*
+
          (= related-entity ::parent)
          (assoc-in entity* [::attributes ref-attribute] ::parent)
 

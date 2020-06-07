@@ -68,18 +68,18 @@
                     (compile-entities into))]
     (fn
       [a
-       {:keys [db]
+       {::entity/keys [conn]
         :as context}]
       (->
        (clause-fn
         a
-        (merge context {::query (f/coll db collection)}))
+        (merge context {::query (f/coll conn collection)}))
        (as-> $
            (assoc
             $
             ::docs
-            (f/pullv (::query $))))
-       entity-fn))))
+            (f/pullv (::query $)))
+         (entity-fn a $))))))
 
 (defn execute
   [a
