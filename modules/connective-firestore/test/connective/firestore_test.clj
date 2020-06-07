@@ -506,7 +506,7 @@
 (deftest an-example-read-relationships-test
   (testing "a example of reading relationships"
     (with-example-entity-tree
-      #_(let [written-s-cart (core/write-rels fs context shopping-cart)
+      (let [written-s-cart (core/write-rels fs context shopping-cart)
             ident (entity/ident-of-entity written-s-cart)
             s-cart (core/read-rels
                     fs
@@ -558,7 +558,7 @@
               (doseq [k [:item-ref :shopping-cart-ref]]
                 (is (some? (k attributes)))))))
 
-        #_(let [expected {::entity/kind ::items
+        (let [expected {::entity/kind ::items
                         ::entity/ident {::entity/kind ::items
                                         ::entity/id "ff-0012"}
                         ::entity/attributes {:sku "ff-0012"
@@ -576,7 +576,7 @@
           (is (= expected (without actual {:context nil})))
           (is (= expected (entity/persisted-value-of-entity actual))))
 
-        #_(let [expected (for [e (keyword-entities item-1-description)]
+        (let [expected (for [e (keyword-entities item-1-description)]
                          (->
                           e
                           (assoc
@@ -596,7 +596,7 @@
                            $)
                         ))]
 
-          (is (= expected (map #(without % {:context nil}) actual)))
+          (is (= (frequencies expected) (frequencies (map #(without % {:context nil}) actual))))
 
           (doseq [a actual]
             (let [{::entity/keys [attributes]} (entity/persisted-value-of-entity a)]

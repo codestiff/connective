@@ -39,8 +39,7 @@
      {::entity/keys [kind]
       :as ident}]
     (assert (some? kind))
-    (let [
-          base-entity {::entity/ident ident
+    (let [base-entity {::entity/ident ident
                        ::entity/kind kind}
           doc-id (utils/doc-id base-entity)
           snapshot (->
@@ -48,7 +47,10 @@
                     (f/doc-snap))]
       (if (f/exists? snapshot)
         (let [data (f/ds->plain snapshot)
-              entity (utils/assoc-entity-attributes base-entity data)
+              entity (utils/assoc-entity-attributes
+                      context
+                      base-entity
+                      data)
               entity (entity/init
                       a
                       context
@@ -101,8 +103,10 @@
     (fn
       [a
        context]
+      (println ">>> pull reference query:" params)
       (let [base-entity {::entity/kind kind}
             entity (utils/assoc-entity-attributes
+                    context
                     base-entity
                     (f/pull ref-value))
             entity (core/init-entity
@@ -116,7 +120,6 @@
   (execute-query
     [a context query]
     (let [r (e.query/execute a context query)]
-      (println "q result: " r)
       r))
 
   (validator

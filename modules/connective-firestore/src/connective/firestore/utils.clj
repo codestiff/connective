@@ -33,10 +33,21 @@
    (entity/attributes-of-entity entity)))
 
 (defn assoc-entity-attributes
-  [entity doc]
-  (let [attrs (reduce
+  [context entity doc]
+  (let [schema (entity/schema-of-entity context entity)
+        relations (entity/relationships-of-schema schema)
+        rels (reduce
+              (fn
+                [r* [k _]]
+                (assoc r* k ::entity/pending))
+              {}
+              relations)
+        attrs (reduce
                (fn
                  [e [k v]]
                  (assoc e (keyword k) v))
                {} doc)]
-    (assoc entity ::entity/attributes attrs)))
+    (->
+     entity
+     (assoc ::entity/attributes attrs)
+     (assoc ::entity/relationships rels))))

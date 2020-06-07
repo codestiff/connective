@@ -44,6 +44,7 @@
     (let [entities (for [doc-data docs]
                      (let [base-entity {::entity/kind kind}
                            entity (utils/assoc-entity-attributes
+                                   ctx
                                    base-entity
                                    doc-data)
                            entity (core/init-entity

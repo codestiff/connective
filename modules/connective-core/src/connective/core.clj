@@ -186,12 +186,12 @@
                    {::entity/keys [relationship-key
                                    relation]}]
                   (if (contains? query-rels relationship-key)
-                    (let [[_ {::entity/keys [ref-attribute]}] relation
+                    (let [[_ {::entity/keys [ref-attribute]
+                              :as rel-opts}] relation
                           _ (assert (some? ref-attribute))
                           ref-value (get-in e* [::entity/attributes ref-attribute])
                           related-entity (->>
-                                          relation
-                                          second
+                                          (assoc rel-opts ::entity/ref-value ref-value)
                                           (reference-query a context)
                                           (execute-query a context))
                           context (->
@@ -215,11 +215,11 @@
                         related-entity]
          :as ctx}]
        (if (contains? query-rels relationship-key)
-         (let [related-entities (->>
-                                 (->
-                                  relation
-                                  second
-                                  (assoc ::entity/ref-value ref-value))
+         (let [[_ {::entity/keys [ref-attribute]
+                   :as rel-opts}] relation
+               _ (assert (some? ref-attribute))
+               related-entities (->>
+                                 (assoc rel-opts ::entity/ref-value ref-value)
                                  (related-query a context)
                                  (execute-query a context))
                context (->
@@ -229,9 +229,17 @@
                          ::entity/parent-relation relation))
                related-entities (doall
                                  (for [e related-entities]
-                                   (pull-rel-tree
-                                    a
-                                    (assoc context ::entity/entity e))))]
+                                   (let [rel-key (entity/relationship-key-of-reference-relation-of-entity
+                                                         context
+                                                         entity
+                                                         rel-opts)
+                                         e (pull-rel-tree
+                                            a
+                                            (assoc context ::entity/entity e))]
+                                     (->
+                                      e
+                                      (assoc-in [::entity/attributes ref-attribute] ::entity/parent)
+                                      (assoc-in [::entity/relationships rel-key] ::entity/parent)))))]
            (assoc-in e* [::entity/relationships relationship-key] related-entities))
          e*))
      entity
