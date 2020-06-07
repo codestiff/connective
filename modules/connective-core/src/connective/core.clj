@@ -80,20 +80,22 @@
                 (fn
                   [e*
                    {::entity/keys [relationship-key
-                                  related-entity]}]
-                  (let [context (->
-                                 context
-                                 (assoc ::entity/entity related-entity)
-                                 (dissoc
-                                  ::entity/parent
-                                  ::entity/parent-relation))
-                        related-entity (walk-rel-tree a context)]
-                    ;; unsure, but maybe set the corresponding
-                    ;; many relationship in the related entity to
-                    ;; ::entity/parent instead of having it not
-                    ;; exist, in order to tell if it should be
-                    ;; validated or not
-                    (assoc-in e* [::entity/relationships relationship-key] related-entity)))
+                                   related-entity]}]
+                  (if (nil? related-entity)
+                    e*
+                    (let [context (->
+                                   context
+                                   (assoc ::entity/entity related-entity)
+                                   (dissoc
+                                    ::entity/parent
+                                    ::entity/parent-relation))
+                          related-entity (walk-rel-tree a context)]
+                      ;; unsure, but maybe set the corresponding
+                      ;; many relationship in the related entity to
+                      ;; ::entity/parent instead of having it not
+                      ;; exist, in order to tell if it should be
+                      ;; validated or not
+                      (assoc-in e* [::entity/relationships relationship-key] related-entity))))
                 entity
                 (get relationships ::entity/reference))
 
@@ -120,19 +122,22 @@
      (fn
        [e*
         {::entity/keys [relationship-key
-                       relation
-                       related-entity]
+                        relation
+                        related-entity]
          :as ctx}]
-       (let [context (assoc
-                      context
-                      ::entity/parent entity
-                      ::entity/parent-relation relation)
-             related-entities (doall
-                               (for [e related-entity]
-                                 (walk-rel-tree
-                                  a
-                                  (assoc context ::entity/entity e))))]
-         (assoc-in e* [::entity/relationships relationship-key] related-entities)))
+       (if (nil? related-entity)
+         e*
+         (let [context (->
+                        context
+                        (assoc
+                         ::entity/parent entity
+                         ::entity/parent-relation relation))
+               related-entities (doall
+                                 (for [e related-entity]
+                                   (walk-rel-tree
+                                    a
+                                    (assoc context ::entity/entity e))))]
+           (assoc-in e* [::entity/relationships relationship-key] related-entities))))
      entity
      (get relationships ::entity/many))))
 
@@ -170,20 +175,88 @@
    entity]
   (write-rels* a context entity))
 
+(defn pull-rel-tree
+  [a
+   {::entity/keys [entity
+                   parent
+                   parent-relation]
+    ::keys [query-rels]
+    :as context}]
+  (let [relationships (entity/relationship-groups-of-entity context entity)
+        query-rels (::entity/relationships query-rels)
+        content (assoc context ::entity/parent entity)
+        entity (reduce
+                (fn
+                  [e*
+                   {::entity/keys [relationship-key
+                                   relation]}]
+                  (if (contains? query-rels relationship-key)
+                    (let [related-entity (->>
+                                          relation
+                                          second
+                                          (reference-query a context)
+                                          (execute-query a context))
+                          context (->
+                                   context
+                                   (assoc
+                                    ::query-rels (get query-rels relationship-key)
+                                    ::entity/parent-relation relation
+                                    ::entity/entity related-entity))
+                          related-entity (pull-rel-tree a context)]
+                      (assoc-in e* [::entity/relationships relationship-key] related-entity))
+
+                    e*))
+                entity
+                (get relationships ::entity/reference))]
+    (reduce
+     (fn
+       [e*
+        {::entity/keys [relationship-key
+                        relation
+                        related-entity]
+         :as ctx}]
+       (if (contains? query-rels relationship-key)
+         (let [related-entities (->>
+                               relation
+                               second
+                               (related-query a context)
+                               (execute-query a context))
+               context (->
+                        context
+                        (assoc
+                         ::query-rels (get query-rels relationship-key)
+                         ::entity/parent-relation relation))
+               related-entities (doall
+                                 (for [e related-entities]
+                                   (pull-rel-tree
+                                    a
+                                    (assoc context ::entity/entity e))))]
+           (assoc-in e* [::entity/relationships relationship-key] related-entities))
+         e*))
+     entity
+     (get relationships ::entity/many))))
+
 (defn- read-rels*
   ([a
     context
-    entity]
-   (walk-rel-tree
+    ident]
+   (pull-rel-tree
     a
     (assoc
      context
-     ::node-fn read-entity
-     ::entity/entity entity))))
+     ::entity/entity (read-entity a context ident)))))
 
 (defn read-rels
-  [a context ident-query]
-  (read-rels* a context ident-query))
+  [a
+   context
+   {::entity/keys [relationships]
+    :as ident}]
+  (read-rels*
+   a
+   (assoc
+    context
+    ::query-rels {::entity/relationships relationships})
+   (dissoc ident ::entity/relationships)))
 
 (comment
   (macroexpand-1 '(defn-of-adaptor related-query))

@@ -158,19 +158,20 @@
 (defn relationship-groups-of-entity
   [context
    entity]
-  (reduce
-   (fn
-     [ctx [k related-entity]]
-     (let [[rel-type _ :as relation] (relation-of-entity context entity k)]
-       (update
-        ctx
-        rel-type
-        conj
-        {::relationship-key k
-         ::relation relation
-         ::related-entity related-entity})))
-   {}
-   (relationships-of-entity entity)))
+  (let [schema (schema-of-entity context entity)]
+    (reduce
+     (fn
+       [ctx [rel-key [rel-type _ :as relation]]]
+       (let [related-entity (get-in entity [::relationships rel-key])]
+         (update
+          ctx
+          rel-type
+          conj
+          {::relationship-key rel-key
+           ::relation relation
+           ::related-entity related-entity})))
+     {}
+     (relationships-of-schema schema))))
 
 (defn assoc-reference-attributes-of-relationships
   "Takes a context (db, schema)

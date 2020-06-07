@@ -503,7 +503,7 @@
         )
       )))
 
-#_(deftest an-example-read-relationships-test
+(deftest an-example-read-relationships-test
   (testing "a example of reading relationships"
     (with-example-entity-tree
       (let [written-s-cart (core/write-rels fs context shopping-cart)
@@ -516,7 +516,9 @@
                      ::entity/relationships
                      {:shopping-cart-items
                       {::entity/relationships
-                       {:item {::entity/relationships {:keywords nil}}}}}))]
+                       {:item
+                        {::entity/relationships
+                         {:keywords nil}}}}}))]
 
         (is
          (= {::entity/kind ::shopping-carts
@@ -526,13 +528,13 @@
 
              (without s-cart {:rels nil :context nil})))
 
-        (is
+        #_(is
          (=
           (without s-cart {:rels nil :context nil})
           (entity/persisted-value-of-entity s-cart)))
 
 
-        (let [expected [{::entity/kind ::shopping-cart-items
+        #_(let [expected [{::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
                                          ::entity/id (mapv encode-id ["user-1" "ff-0012"])}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}
@@ -556,7 +558,7 @@
               (doseq [k [:item-ref :shopping-cart-ref]]
                 (is (some? (k attributes)))))))
 
-        (let [expected {::entity/kind ::items
+        #_(let [expected {::entity/kind ::items
                         ::entity/ident {::entity/kind ::items
                                         ::entity/id "ff-0012"}
                         ::entity/attributes {:sku "ff-0012"
@@ -574,7 +576,7 @@
           (is (= expected (without actual {:context nil})))
           (is (= expected (entity/persisted-value-of-entity actual))))
 
-        (let [expected (for [e (keyword-entities item-1-description)]
+        #_(let [expected (for [e (keyword-entities item-1-description)]
                          (->
                           e
                           (assoc
