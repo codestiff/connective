@@ -1,5 +1,6 @@
 (ns connective.core
   (:require
+   [taoensso.timbre :as log]
    [connective.adapter :as adapter]
    [connective.schema :as schema]
    [connective.entity :as entity]))
@@ -10,13 +11,36 @@
      [~'adapter ~'context ~'arg]
      (~(symbol "adapter" (str sym)) ~'adapter ~'context ~'arg)))
 
+(defmacro defn-of-adaptor-2
+  [sym log-fn]
+  `(defn ~sym
+     [~'adapter ~'context ~'arg]
+     (let [r# (~(symbol "adapter" (str sym)) ~'adapter ~'context ~'arg)]
+       (~log-fn (str '~sym) ~'arg r#)
+       r#)))
+
+(defn- log-read
+  [op args result]
+  (let [p (select-keys args [::entity/kind ::entity/id])]
+    (log/debug :op op :ident p)))
+
+(defn- log-delete
+  [op args result]
+  (let [p (select-keys result [::entity/kind ::entity/id])]
+    (log/debug :op op :ident p)))
+
+(defn- log-write
+  [op args result]
+  (let [p (select-keys result [::entity/ident])]
+    (log/debug :op op :entity p)))
+
 (defn-of-adaptor related-query)
 (defn-of-adaptor reference-query)
 (defn-of-adaptor execute-query)
 (defn-of-adaptor init-entity)
-(defn-of-adaptor write-entity)
-(defn-of-adaptor read-entity)
-(defn-of-adaptor delete-entity)
+(defn-of-adaptor-2 write-entity log-write)
+(defn-of-adaptor-2 read-entity log-read)
+(defn-of-adaptor-2 delete-entity log-delete)
 (defn-of-adaptor reference-value)
 (defn validator
   [a]
@@ -308,6 +332,6 @@
   (delete-rels* a context ident))
 
 (comment
-  (macroexpand-1 '(defn-of-adaptor related-query))
+  (macroexpand-1 '(defn-of-adaptor-2 related-query log-op))
   (macroexpand-1 '(def-collection-fn write-entities write-entity))
   )

@@ -609,105 +609,70 @@
 (deftest an-example-delete-relationships-test
   (testing "a example of deleting relationships"
     (with-example-entity-tree
-      (let [written-s-cart (core/write-rels fs context shopping-cart)
-            ident (entity/ident-of-entity written-s-cart)
-            s-cart (core/delete-rels
-                    fs
-                    context
-                    (assoc
-                     written-s-cart
-                     ::core/delete-all
-                     {:shopping-cart-items
-                      {::entity/relationships
-                       {:item
-                        {::entity/relationships
-                         {:keywords nil}}}}}))]
+      (let [s-cart (core/write-rels fs context shopping-cart)
+            _ (core/delete-rels
+               fs
+               context
+               (assoc
+                s-cart
+                ::core/delete-all
+                {:shopping-cart-items
+                 {::entity/relationships
+                  {:item
+                   {::entity/relationships
+                    {:keywords nil}}}}}))]
 
         (is
-         (= {::entity/kind ::shopping-carts
-             ::entity/ident {::entity/kind ::shopping-carts
-                             ::entity/id "user-1"}
-             ::entity/attributes {:user-id "user-1"}}
+         (nil?
+          (core/read-entity fs context (entity/ident-of-entity s-cart))))
 
-             (without s-cart {:rels nil :context nil})))
+        (let [shopping-cart-items (->
+                                   s-cart
+                                   (into-rels [:shopping-cart-items])
+                                   (as-> $
+                                       (map
+                                        #(without % {:attrs [:item-ref] :rels nil})
+                                        $)))]
+          (is (not (empty? shopping-cart-items)))
+          (doseq [sci shopping-cart-items]
+            (is
+             (nil?
+              (core/read-entity fs context (entity/ident-of-entity sci)))))
+          )
 
-        #_(is
-         (=
-          (without s-cart {:rels nil :context nil})
-          (entity/persisted-value-of-entity s-cart)))
+        (let [item (->
+                    s-cart
+                    (into-rels [:shopping-cart-items])
+                    first
+                    (into-rels [:item])
+                    (without {:rels nil}))]
 
+          (is (some? item))
 
-        #_(let [expected [{::entity/kind ::shopping-cart-items
-                         ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id (mapv encode-id ["user-1" "ff-0012"])}
-                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}
+          (is
+           (nil?
+            (core/read-entity fs context (entity/ident-of-entity item)))))
 
-                        {::entity/kind ::shopping-cart-items
-                         ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id (mapv encode-id ["user-1" "gd-4921"])}
-                         ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
+        (let [keywords (->
+                        s-cart
+                        (into-rels [:shopping-cart-items])
+                        first
+                        (into-rels [:item :keywords])
+                        (as-> $
+                            (map
+                             #(without % {:rels nil})
+                             $)
+                          ))]
 
-              actual (->
-                      s-cart
-                      (into-rels [:shopping-cart-items])
-                      (as-> $
-                          (map
-                           #(without % {:attrs [:item-ref] :rels nil})
-                           $)))]
-          (is (= expected (map #(without % {:context nil}) actual)))
-
-          (doseq [a actual]
-            (let [{::entity/keys [attributes]} (entity/persisted-value-of-entity a)]
-              (doseq [k [:item-ref :shopping-cart-ref]]
-                (is (some? (k attributes)))))))
-
-        #_(let [expected {::entity/kind ::items
-                        ::entity/ident {::entity/kind ::items
-                                        ::entity/id "ff-0012"}
-                        ::entity/attributes {:sku "ff-0012"
-                                             :name "kitten"
-                                             :description item-1-description
-                                             :price 128.99}}
-
-              actual (->
-                      s-cart
-                      (into-rels [:shopping-cart-items])
-                      first
-                      (into-rels [:item])
-                      (without {:rels nil}))]
-
-          (is (= expected (without actual {:context nil})))
-          (is (= expected (entity/persisted-value-of-entity actual))))
-
-        #_(let [expected (for [e (keyword-entities item-1-description)]
-                         (->
-                          e
-                          (assoc
-                           ::entity/ident {::entity/kind ::item-search-keywords
-                                           ::entity/id [(-> e ::entity/attributes :keyword) (encode-id "ff-0012")]}
-                           )
-                          (update ::entity/attributes assoc :item-ref ::entity/parent)))
-
-              actual (->
-                      s-cart
-                      (into-rels [:shopping-cart-items])
-                      first
-                      (into-rels [:item :keywords])
-                      (as-> $
-                          (map
-                           #(without % {:rels nil})
-                           $)
-                        ))]
-
-          (is (= (frequencies expected) (frequencies (map #(without % {:context nil}) actual))))
-
-          (doseq [a actual]
-            (let [{::entity/keys [attributes]} (entity/persisted-value-of-entity a)]
-              (doseq [k [:item-ref]]
-                (is (some? (k attributes))))))
+          (is (not (empty? keywords)))
+          (doseq [k keywords]
+            (is
+             (nil?
+              (core/read-entity fs context (entity/ident-of-entity k)))))
           )
         )
-      )))
+      )
+    ))
 
 (comment
 
