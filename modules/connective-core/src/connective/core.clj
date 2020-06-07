@@ -148,14 +148,10 @@
      ::entity/entity entity))))
 
 (defn init-rels
-  ([a context entity]
-   (init-rels a context entity nil))
-  ([a
-    {::entity/keys [parent]
-     :as context}
-    entity
-    params]
-   (init-rels* a (assoc context ::params params) entity)))
+  [a
+   context
+   entity]
+  (init-rels* a context entity))
 
 (defn- write-rels*
   ([a
@@ -169,14 +165,25 @@
      ::entity/entity entity))))
 
 (defn write-rels
-  ([a context entity]
-   (write-rels a context entity nil))
+  [a
+   context
+   entity]
+  (write-rels* a context entity))
+
+(defn- read-rels*
   ([a
-    {::entity/keys [parent]
-     :as context}
-    entity
-    params]
-   (write-rels* a (assoc context ::params params) entity)))
+    context
+    entity]
+   (walk-rel-tree
+    a
+    (assoc
+     context
+     ::node-fn read-entity
+     ::entity/entity entity))))
+
+(defn read-rels
+  [a context ident-query]
+  (read-rels* a context ident-query))
 
 (comment
   (macroexpand-1 '(defn-of-adaptor related-query))
