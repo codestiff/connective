@@ -1,6 +1,8 @@
 (ns connective.firestore.query
   (:require
+   [connective.firestore.utils :as utils]
    [connective.entity :as entity]
+   [connective.core :as core]
    [firestore-clj.core :as f]))
 
 (defmulti compile-clause
@@ -20,32 +22,36 @@
   (assert
    (and (some? attr)
         (some? value)))
-  (assoc context ::query (f/filter-in query (name attr) value))
-  )
+  (assoc context ::query (f/filter-in query (name attr) value)))
 
 (defn- compile-clauses
   [where]
   (fn
-    [context]
+    [a
+     ctx]
     (reduce
      compile-clause
-     context
+     ctx
      where)))
 
-(defn compile-entity
+(defn compile-entities
   [kind]
   (fn
-    [{:keys [schema]
-      ::keys [docs]}]
-    (assert (some? schema))
-    (let [entity-schema (utils/schema-of-kind
-                         schema
-                         kind)]
-      (for [doc docs]
-        (entity/entify-doc
-         entity-schema
-         {::entity/exists? true}
-         doc)))))
+    [a
+     {::keys [docs]
+      :as ctx}]
+    (assert (some? kind))
+    (let [entities (for [doc-data docs]
+                     (let [base-entity {::entity/kind kind}
+                           entity (utils/assoc-entity-attributes
+                                   base-entity
+                                   doc-data)
+                           entity (core/init-entity
+                                   a
+                                   ctx
+                                   entity)]
+                       (entity/assoc-persisted-value entity))) ]
+      entities)))
 
 (defn compile
   [{::keys [find
@@ -58,15 +64,16 @@
         (or (coll? where) (nil? where))))
   (let [clause-fn (compile-clauses where)
         entity-fn (if (nil? into)
-                    (fn [x & xs] x)
-                    (compile-entity into))]
+                    (fn [a ctx & xs] ctx)
+                    (compile-entities into))]
     (fn
-      [{:keys [db]
+      [a
+       {:keys [db]
         :as context}]
       (->
-       {::query (f/coll db collection)}
-       (merge context)
-       clause-fn
+       (clause-fn
+        a
+        (merge context {::query (f/coll db collection)}))
        (as-> $
            (assoc
             $
@@ -74,11 +81,15 @@
             (f/pullv (::query $))))
        entity-fn))))
 
+(defn execute
+  [a
+   context
+   qfn]
+  (qfn a context))
+
 (defn q
-  [context
+  [a
+   context
    query]
   (let [qfn (compile query)]
-    (->
-     context
-     qfn
-     ::docs)))
+    (execute a context qfn)))

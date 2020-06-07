@@ -1,0 +1,2 @@
+(ns connective.firestore.entity)
+

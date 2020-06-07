@@ -506,7 +506,7 @@
 (deftest an-example-read-relationships-test
   (testing "a example of reading relationships"
     (with-example-entity-tree
-      (let [written-s-cart (core/write-rels fs context shopping-cart)
+      #_(let [written-s-cart (core/write-rels fs context shopping-cart)
             ident (entity/ident-of-entity written-s-cart)
             s-cart (core/read-rels
                     fs
