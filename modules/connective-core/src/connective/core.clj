@@ -186,7 +186,10 @@
                    {::entity/keys [relationship-key
                                    relation]}]
                   (if (contains? query-rels relationship-key)
-                    (let [related-entity (->>
+                    (let [[_ {::entity/keys [ref-attribute]}] relation
+                          _ (assert (some? ref-attribute))
+                          ref-value (get-in e* [::entity/attributes ref-attribute])
+                          related-entity (->>
                                           relation
                                           second
                                           (reference-query a context)
@@ -202,7 +205,8 @@
 
                     e*))
                 entity
-                (get relationships ::entity/reference))]
+                (get relationships ::entity/reference))
+        ref-value (reference-value a context entity)]
     (reduce
      (fn
        [e*
@@ -212,10 +216,12 @@
          :as ctx}]
        (if (contains? query-rels relationship-key)
          (let [related-entities (->>
-                               relation
-                               second
-                               (related-query a context)
-                               (execute-query a context))
+                                 (->
+                                  relation
+                                  second
+                                  (assoc ::entity/ref-value ref-value))
+                                 (related-query a context)
+                                 (execute-query a context))
                context (->
                         context
                         (assoc

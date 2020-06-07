@@ -88,7 +88,6 @@
                       a
                       context
                       entity)]
-          (println ">>>> read: " ident)
           (entity/assoc-persisted-value entity))
         nil)))
 
@@ -117,14 +116,14 @@
       ident))
 
   (related-query
-    [_ context params]
-    (prn context)
+    [_ context {::entity/keys [ref-attribute
+                               kind
+                               ref-value]}]
     (prn params)
     [])
 
   (reference-query
     [_ context params]
-    (prn context)
     (prn params)
     nil)
 
