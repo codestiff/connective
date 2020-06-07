@@ -1,7 +1,8 @@
 (ns connective.entity
   (:require
    [connective.validator :as validator]
-   [connective.adapter :as adapter]))
+   [connective.adapter :as adapter]
+   [connective.entity :as entity]))
 
 (defn schema-of-kind
   [schema kind]
@@ -57,7 +58,12 @@
   [entity]
   (merge-context
    entity
-   {::persisted-value entity}))
+   {::persisted-value
+    (select-keys
+     entity
+     [::kind
+      ::ident
+      ::attributes])}))
 
 (defn ident-of-entity
   [{::keys [ident]}]

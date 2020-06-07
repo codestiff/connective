@@ -157,94 +157,18 @@
     params]
    (init-rels* a (assoc context ::params params) entity)))
 
-#_(defn- write-rel
-  [a
-   {::entity/keys [relation
-                   parent-ref
-                   relationship-key]
-    ::keys [recur-fn
-            params]
-    :as context}
-   entity]
-  (assert
-   (and
-    (some? relation)
-    (some? relationship-key)
-    (some? recur-fn)))
-  (let [[rel-type {::entity/keys [kind ref-attribute]}] relation]
-    (if (or (nil? params)
-            (contains? params relationship-key))
-      (let [params* (get params relationship-key)]
-        (case rel-type
-          ::entity/many (doall
-                         (for [e entity]
-                           (recur-fn
-                            a
-                            (assoc context ::params params*)
-                            (assoc-in e [::entity/attributes ref-attribute] parent-ref))))
-          ::entity/reference (recur-fn
-                              a
-                              (assoc context ::params params*)
-                              entity)))
-      entity)))
-
-(defn- update-reference-rels
-  [entity
-   upfn]
-  ;; TODO
-  (let [new-rels (upfn (entity/relationships-of-entity entity))]
-    (entity/assoc-relationships entity new-rels)))
-
-(defn- update-many-rels
-  [entity
-   upfn]
-  ;; TODO
-  (let [new-rels (upfn (entity/relationships-of-entity entity))]
-    (entity/assoc-relationships entity new-rels)))
-
-#_(defn- write-rels*
+(defn- write-rels*
   ([a
-    {::entity/keys [parent]
-     ::keys [params]
-     :as context}
+    context
     entity]
-   (let [upfn (fn
-                [rels {::keys [entity-ref]}]
-                (reduce
-                 (fn
-                   [rels* [k {::keys [related-entity
-                                      relation]}]]
-                   (let [kind (entity/kind-of-entity entity) ; probably bug
-                         related-params (get params kind)
-                         context (assoc
-                                  context
-                                  ::entity/parent-ref entity-ref
-                                  ::entity/relation relation
-                                  ::entity/relationship-key k
-                                  ::recur-fn write-rels*)
-                         ;; note, related-entity might be multiple
-                         related-entity (write-rel
-                                         a
-                                         (assoc context ::params related-params)
-                                         related-entity)]
-                     (assoc rels* k related-entity)))
-                 {}
-                 rels))
-         entity (update-reference-rels
-                 entity
-                 #(upfn % nil))
-         entity (write-entity
-                 a
-                 context
-                 entity)
-         entity-ref (reference-value a context entity)]
-     entity (update-many-rels
-             entity
-             #(upfn % {::entity-ref entity-ref})
-             )
-     )))
+   (walk-rel-tree
+    a
+    (assoc
+     context
+     ::node-fn write-entity
+     ::entity/entity entity))))
 
-#_(defn write-rels
+(defn write-rels
   ([a context entity]
    (write-rels a context entity nil))
   ([a

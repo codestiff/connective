@@ -45,12 +45,17 @@
    entity
    key-coll))
 
+(defn without-context
+  [entity]
+  (dissoc entity ::entity/context))
+
 (defn without
   [entity {:keys [attrs]
            :as opts}]
   (cond-> entity
     (some? attrs) (without-attrs attrs)
-    (contains? opts :rels) (without-rels)))
+    (contains? opts :rels) (without-rels)
+    (contains? opts :context) (without-context)))
 
 (defn into-rels
   [entity key-coll]
@@ -191,7 +196,7 @@
       (is (contains? (core/context written-entity) ::entity/persisted-value))
 
       (is (=
-           (update written-entity ::entity/context dissoc ::entity/persisted-value)
+           (without written-entity {:context nil} )
            (entity/persisted-value-of-entity written-entity)))
 
       (is (= expected-ident (core/ident written-entity)))
@@ -256,7 +261,7 @@
       (is (contains? (core/context read-entity) ::entity/persisted-value))
 
       (is (=
-           original-entity
+           (without original-entity {:context nil})
            (entity/persisted-value-of-entity read-entity)))
 
       (is (= ident (core/ident read-entity)))
@@ -407,7 +412,7 @@
           (is (= expected actual))))
         )))
 
-#_(deftest an-example-write-relationships-test
+(deftest an-example-write-relationships-test
   (testing "a example of reading relationships"
     (with-example-entity-tree
       (let [s-cart (core/write-rels fs context shopping-cart)]
@@ -415,19 +420,24 @@
          (= {::entity/kind ::shopping-carts
              ::entity/ident {::entity/kind ::shopping-carts
                              ::entity/id "user-1"}
-             ::entity/context {}
-             ::entity/attributes {:user-id "user-1"}} (without-rels s-cart)))
+             ::entity/attributes {:user-id "user-1"}}
+
+             (without s-cart {:rels nil :context nil})))
+
+        (is
+         (=
+          (without s-cart {:rels nil :context nil})
+          (entity/persisted-value-of-entity s-cart)))
+
 
         (let [expected [{::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id (encode-id ["user-1" "ff00-12"])}
-                         ::entity/context {}
+                                         ::entity/id (mapv encode-id ["user-1" "ff-0012"])}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}
 
                         {::entity/kind ::shopping-cart-items
                          ::entity/ident {::entity/kind ::shopping-cart-items
-                                         ::entity/id (encode-id ["user-2" "gd-4921"])}
-                         ::entity/context {}
+                                         ::entity/id (mapv encode-id ["user-1" "gd-4921"])}
                          ::entity/attributes {:shopping-cart-ref ::entity/parent}}]
 
               actual (->
@@ -437,12 +447,16 @@
                           (map
                            #(without % {:attrs [:item-ref] :rels nil})
                            $)))]
-          (is (= expected actual)))
+          (is (= expected (map #(without % {:context nil}) actual)))
+
+          (doseq [a actual]
+            (let [{::entity/keys [attributes]} (entity/persisted-value-of-entity a)]
+              (doseq [k [:item-ref :shopping-cart-ref]]
+                (is (some? (k attributes)))))))
 
         (let [expected {::entity/kind ::items
                         ::entity/ident {::entity/kind ::items
                                         ::entity/id "ff-0012"}
-                        ::entity/context {}
                         ::entity/attributes {:sku "ff-0012"
                                              :name "kitten"
                                              :description item-1-description
@@ -455,15 +469,16 @@
                       (into-rels [:item])
                       (without {:rels nil}))]
 
-          (is (= expected actual)))
+          (is (= expected (without actual {:context nil})))
+          (is (= expected (entity/persisted-value-of-entity actual))))
 
         (let [expected (for [e (keyword-entities item-1-description)]
                          (->
                           e
                           (assoc
                            ::entity/ident {::entity/kind ::item-search-keywords
-                                           ::entity/id ::entity/pending}
-                           ::entity/context {})
+                                           ::entity/id [(-> e ::entity/attributes :keyword) (encode-id "ff-0012")]}
+                           )
                           (update ::entity/attributes assoc :item-ref ::entity/parent)))
 
               actual (->
@@ -476,8 +491,16 @@
                            #(without % {:rels nil})
                            $)
                         ))]
-          (is (= expected actual))))
-        )))
+
+          (is (= expected (map #(without % {:context nil}) actual)))
+
+          (doseq [a actual]
+            (let [{::entity/keys [attributes]} (entity/persisted-value-of-entity a)]
+              (doseq [k [:item-ref]]
+                (is (some? (k attributes))))))
+          )
+        )
+      )))
 
 (comment
 
