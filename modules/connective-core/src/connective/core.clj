@@ -14,11 +14,6 @@
 (defn-of-adaptor reference-query)
 (defn-of-adaptor execute-query)
 (defn-of-adaptor init-entity)
-#_(defn init-entity
-  [a c p]
-  (let [se (entity/simple-entity p)]
-    (prn se)
-    (adapter/init-entity a c p)))
 (defn-of-adaptor write-entity)
 (defn-of-adaptor read-entity)
 (defn-of-adaptor delete-entity)
