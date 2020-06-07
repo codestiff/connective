@@ -137,15 +137,15 @@
      (get relationships ::entity/many))))
 
 (defn- init-rels*
-  ([a
+  [a
+   context
+   entity]
+  (walk-rel-tree
+   a
+   (assoc
     context
-    entity]
-   (walk-rel-tree
-    a
-    (assoc
-     context
-     ::node-fn init-entity
-     ::entity/entity entity))))
+    ::node-fn init-entity
+    ::entity/entity entity)))
 
 (defn init-rels
   [a
@@ -154,15 +154,15 @@
   (init-rels* a context entity))
 
 (defn- write-rels*
-  ([a
+  [a
+   context
+   entity]
+  (walk-rel-tree
+   a
+   (assoc
     context
-    entity]
-   (walk-rel-tree
-    a
-    (assoc
-     context
-     ::node-fn write-entity
-     ::entity/entity entity))))
+    ::node-fn write-entity
+    ::entity/entity entity)))
 
 (defn write-rels
   [a
@@ -246,14 +246,14 @@
      (get relationships ::entity/many))))
 
 (defn- read-rels*
-  ([a
+  [a
+   context
+   ident]
+  (pull-rel-tree
+   a
+   (assoc
     context
-    ident]
-   (pull-rel-tree
-    a
-    (assoc
-     context
-     ::entity/entity (read-entity a context ident)))))
+    ::entity/entity (read-entity a context ident))))
 
 (defn read-rels
   [a
@@ -266,6 +266,25 @@
     context
     ::query-rels {::entity/relationships relationships})
    (dissoc ident ::entity/relationships)))
+
+(defn- delete-rels*
+  [a
+   context
+   {::entity/keys [relationships]
+    :as ident}]
+  (walk-rel-tree
+   a
+   (assoc
+    context
+    ::node-fn (fn [_ _ e] e)
+    ::query-rels {::entity/relationships relationships}
+    ::entity/entity (dissoc ident ::entity/relationships))))
+
+(defn delete-rels
+  [a
+   context
+   ident]
+  (delete-rels* a context ident))
 
 (comment
   (macroexpand-1 '(defn-of-adaptor related-query))
