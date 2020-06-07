@@ -68,19 +68,24 @@
    {::entity/keys [entity
                    parent
                    parent-relation]
-    ::keys [node-fn]
+    ::keys [node-fn
+            filter-fn]
+    :or {filter-fn (fn [_ _ {::entity/keys [related-entity]}]
+                     (nil? related-entity))}
     :as context}]
   (let [relationships (entity/relationship-groups-of-entity context entity)
         entity (reduce
                 (fn
                   [e*
                    {::entity/keys [relationship-key
-                                   related-entity]}]
-                  (if (nil? related-entity)
+                                   related-entity]
+                    :as rel-ctx}]
+                  (if (filter-fn a context rel-ctx)
                     e*
                     (let [context (->
                                    context
                                    (assoc ::entity/entity related-entity)
+                                   (update ::entity/rel-path (fnil conj []) relationship-key)
                                    (dissoc
                                     ::entity/parent
                                     ::entity/parent-relation))
@@ -119,11 +124,12 @@
         {::entity/keys [relationship-key
                         relation
                         related-entity]
-         :as ctx}]
-       (if (nil? related-entity)
+         :as rel-ctx}]
+       (if (filter-fn a context rel-ctx)
          e*
          (let [context (->
                         context
+                        (update ::entity/rel-path (fnil conj []) relationship-key)
                         (assoc
                          ::entity/parent entity
                          ::entity/parent-relation relation))
@@ -270,15 +276,30 @@
 (defn- delete-rels*
   [a
    context
-   {::entity/keys [relationships]
-    :as ident}]
+   {::keys [delete-all]
+    :as entity}]
   (walk-rel-tree
    a
    (assoc
     context
-    ::node-fn (fn [_ _ e] e)
-    ::query-rels {::entity/relationships relationships}
-    ::entity/entity (dissoc ident ::entity/relationships))))
+    ::node-fn (fn
+                [a ctx entity]
+                (delete-entity a ctx (entity/ident-of-entity entity))
+                entity)
+    ::filter-fn (fn [_ {::entity/keys [rel-path]
+                        ::keys [delete-all]}
+                     {::entity/keys [related-entity
+                                     relationship-key]}]
+                  (let [q-path (mapcat
+                                vector
+                                rel-path
+                                (repeat (count rel-path) ::entity/relationships))
+                        delete-rels (get-in delete-all q-path)]
+                    (or
+                     (nil? related-entity)
+                     (not (contains? delete-rels relationship-key)))))
+    ::delete-all delete-all
+    ::entity/entity (dissoc entity ::delete-all))))
 
 (defn delete-rels
   [a

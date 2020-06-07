@@ -615,15 +615,15 @@
                     fs
                     context
                     (assoc
-                     ident
-                     ::entity/relationships
+                     written-s-cart
+                     ::core/delete-all
                      {:shopping-cart-items
                       {::entity/relationships
                        {:item
                         {::entity/relationships
                          {:keywords nil}}}}}))]
 
-        #_(is
+        (is
          (= {::entity/kind ::shopping-carts
              ::entity/ident {::entity/kind ::shopping-carts
                              ::entity/id "user-1"}

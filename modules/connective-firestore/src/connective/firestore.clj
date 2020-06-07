@@ -103,7 +103,6 @@
     (fn
       [a
        context]
-      (println ">>> pull reference query:" params)
       (let [base-entity {::entity/kind kind}
             entity (utils/assoc-entity-attributes
                     context
@@ -114,7 +113,6 @@
                     context
                     entity)
             entity (entity/assoc-persisted-value entity)]
-        (println ">>>> read: " (entity/simple-entity entity))
         entity)))
 
   (execute-query
