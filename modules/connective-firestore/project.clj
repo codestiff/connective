@@ -5,17 +5,14 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
 
-  :deploy-repositories [["releases"  {:sign-releases false :url "https://clojars.org/repo"}]
-                        ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
-
   :managed-dependencies [[io.grpc/grpc-netty-shaded "1.23.0"]
                          [io.grpc/grpc-core "1.23.0"]
                          [io.grpc/grpc-api "1.23.0"]
                          [com.google.errorprone/error_prone_annotations "2.3.2"]]
 
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [codestiff/connective.core "0.1.0-SNAPSHOT"]
+                 [codestiff/connective.core "0.1.2"]
                  [polvo/firestore-clj "1.2.1"]
                  [ring/ring-codec "1.1.2"]]
-  :profiles {:dev {:dependencies [[codestiff/connective.malli "0.1.0-SNAPSHOT"]]}}
+  :profiles {:dev {:dependencies [[codestiff/connective.malli "0.1.2"]]}}
   :repl-options {:init-ns connective.firestore})
