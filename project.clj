@@ -1,4 +1,4 @@
-(defproject codestiff/connective "0.1.0"
+(defproject codestiff/connective "0.1.0-SNAPSHOT"
   :description "An API for each accessing persisted entities and the respective relationships."
   :url "https://github.com/codestiff/connective"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -13,7 +13,6 @@
                   ["change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
                   ["vcs" "push"]]
-
 
   :dependencies [[org.clojure/clojure "1.10.1"]]
 
