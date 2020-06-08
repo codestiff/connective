@@ -4,17 +4,16 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
 
-  :deploy-repositories [["releases"  {:sign-releases false :url "https://clojars.org/repo"}]
-                        ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
-
   :release-tasks [["vcs" "assert-committed"]
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
-                  ["vcs" "tag" "v" "--no-sign"]
-                  ["deploy"]
+                  ["vcs" "tag" "--no-sign"]
+                  ["shell" "git" "branch" "-f" "release"]
+                  ["shell" "git" "push" "origin" "release" "-f"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
                   ["vcs" "push"]]
+
 
   :dependencies [[org.clojure/clojure "1.10.1"]]
 
@@ -45,4 +44,5 @@
 
   :plugins [[lein-sub "0.3.0"]
             [lein-codox "0.10.7"]
+            [lein-shell "0.5.0"]
             [lein-ancient "0.6.15"]])
