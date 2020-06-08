@@ -1,4 +1,4 @@
-(defproject codestiff/connective.malli "0.1.7-SNAPSHOT"
+(defproject codestiff/connective.malli "0.1.7"
   :description "a connective validator for malli"
   :url "https://github.com/codestiff/connective"
 
