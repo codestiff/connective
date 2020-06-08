@@ -11,6 +11,7 @@
                   ["vcs" "tag" "--no-sign"]
                   ["shell" "git" "branch" "-f" "release"]
                   ["shell" "git" "push" "origin" "release" "-f"]
+                  ["sub" "deploy" "clojars"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["sub" "change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
