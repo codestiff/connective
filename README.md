@@ -31,6 +31,11 @@ relationships of entities. Do not use this if you have complex
 queries (and want to harness the full capabilities of your query
 language) and performance is a concern.
 
+## Documentation
+
+*  [API Docs](https://codestiff.github.io/connective/)
+
+
 ## Usage
 
 WIP
