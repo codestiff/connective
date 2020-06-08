@@ -7,6 +7,6 @@
 
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [metosin/malli "0.0.1-20200404.091302-14"]
-                 [codestiff/connective.core "0.1.2"]]
+                 [codestiff/connective.core "0.1.7"]]
 
   :repl-options {:init-ns connective.malli})

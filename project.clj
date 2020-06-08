@@ -11,6 +11,7 @@
                   ["vcs" "tag" "--no-sign"]
                   ["shell" "git" "branch" "-f" "release"]
                   ["shell" "git" "push" "origin" "release" "-f"]
+                  ["sub" "install"]
                   ["docs"]
                   ["sub" "deploy" "clojars"]
                   ["change" "version" "leiningen.release/bump-version"]
@@ -30,9 +31,9 @@
 
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
                     :dependencies [
-                                   [codestiff/connective.core "0.1.0-SNAPSHOT"]
-                                   [codestiff/connective.malli "0.1.0-SNAPSHOT"]
-                                   [codestiff/connective.firestore "0.1.0-SNAPSHOT"]
+                                   [codestiff/connective.core "0.1.7"]
+                                   [codestiff/connective.malli "0.1.7"]
+                                   [codestiff/connective.firestore "0.1.7"]
                                    ]
 
                     :codox {:output-path "codox"
