@@ -4,8 +4,12 @@
    [connective.firestore :refer :all]
    [connective.core :as core]
    [connective.entity :as entity]
+   [connective.malli :as malli]
    [firestore-clj.core :as f]
    [ring.util.codec :as codec]))
+
+(defonce fs
+  (->FirestoreAdapter {:connective.firestore/validator (malli/validator)}))
 
 (defonce db
   (f/emulator-client "project-local-1" "localhost:8080"))

@@ -1,7 +1,6 @@
 (ns connective.firestore
   (:require
    [firestore-clj.core :as f]
-   [connective.malli :as malli]
    [connective.validator :as validator]
    [connective.adapter :as adapter]
    [connective.entity :as entity]
@@ -123,10 +122,6 @@
   (validator
     [_]
     (get params ::validator)))
-
-(def fs
-  (FirestoreAdapter.
-   {::validator (malli/validator)}))
 
 (comment
 

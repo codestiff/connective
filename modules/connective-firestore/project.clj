@@ -11,8 +11,8 @@
                          [com.google.errorprone/error_prone_annotations "2.3.2"]]
 
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [codestiff/connective.core "0.1.2"]
+                 [codestiff/connective.core "0.1.3"]
                  [polvo/firestore-clj "1.2.1"]
                  [ring/ring-codec "1.1.2"]]
-  :profiles {:dev {:dependencies [[codestiff/connective.malli "0.1.2"]]}}
+  :profiles {:dev {:dependencies [[codestiff/connective.malli "0.1.3"]]}}
   :repl-options {:init-ns connective.firestore})
