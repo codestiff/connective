@@ -5,11 +5,13 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
 
   :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
                   ["sub" "change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
                   ["vcs" "tag" "--no-sign"]
                   ["shell" "git" "branch" "-f" "release"]
                   ["shell" "git" "push" "origin" "release" "-f"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
                   ["sub" "change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
                   ["vcs" "push"]]
