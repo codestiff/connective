@@ -1,4 +1,4 @@
-(defproject codestiff/connective "0.1.8-SNAPSHOT"
+(defproject codestiff/connective "0.1.8"
   :description "An API for each accessing persisted entities and the respective relationships."
   :url "https://github.com/codestiff/connective"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"

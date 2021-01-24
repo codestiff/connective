@@ -1,4 +1,4 @@
-(defproject codestiff/connective.firestore "0.1.8-SNAPSHOT"
+(defproject codestiff/connective.firestore "0.1.8"
   :description "A connective adaptor for firestore"
   :url "https://github.com/codestiff/connective"
 
