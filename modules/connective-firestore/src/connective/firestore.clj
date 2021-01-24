@@ -79,7 +79,8 @@
           doc (->
                (f/doc conn doc-id)
                (f/delete!))]
-      ident))
+      {::entity/ident ident
+       ::doc doc}))
 
   (related-query
     [_
