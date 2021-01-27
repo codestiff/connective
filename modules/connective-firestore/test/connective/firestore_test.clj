@@ -1,7 +1,7 @@
 (ns connective.firestore-test
   (:require
    [clojure.test :refer :all]
-   [connective.firestore :refer :all]
+   [connective.firestore :refer :all :as firestore]
    [connective.core :as core]
    [connective.entity :as entity]
    [connective.malli :as malli]
@@ -678,6 +678,50 @@
       )
     ))
 
+(deftest an-example-deletion-with-precondition-check-test
+  (testing "a example of deleting with an existence check"
+    (let [attrs {:sku "ff-0012"
+                 :name "kitten"
+                 :description "So many wonder kittens to play with. Try them all."
+                 :price 128.99}
+          entity (core/write-entity
+                  fs
+                  context
+                  {::entity/kind ::items
+                   ::entity/attributes attrs})
+          ident (core/ident entity)
+
+          ctx (assoc
+               context
+               ::firestore/precondition {:exists true})]
+
+      (is (= {::entity/ident ident} (core/delete-entity fs ctx ident)))
+      (is (thrown? java.util.concurrent.ExecutionException (core/delete-entity fs ctx ident)))
+
+      (let [ex (try
+                 (core/delete-entity fs ctx ident)
+                 (catch java.util.concurrent.ExecutionException ex
+                   ex))]
+        (is (= (-> ex .getCause class) com.google.api.gax.rpc.NotFoundException))))))
+
 (comment
+  (::entity/ident my-we)
+
+  (core/delete-entity
+   fs
+   (assoc context ::firestore/precondition {:exists true})
+   (::entity/ident my-we))
+
+  (def my-ex *e)
+
+  my-ex
+  (-> my-ex .getCause .getStatusCode)
+
+  (type my-ex)
+
+  (core/read-entity
+   fs
+   (assoc context ::firestore/precondition {:exists true})
+   (::entity/ident my-we))
 
   )

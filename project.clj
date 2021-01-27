@@ -31,9 +31,9 @@
 
   :profiles {:docs {:plugins [[lein-codox "0.10.7"]]
                     :dependencies [
-                                   [codestiff/connective.core "0.1.7"]
-                                   [codestiff/connective.malli "0.1.7"]
-                                   [codestiff/connective.firestore "0.1.7"]
+                                   [codestiff/connective.core "0.1.8"]
+                                   [codestiff/connective.malli "0.1.8"]
+                                   [codestiff/connective.firestore "0.1.8"]
                                    ]
 
                     :codox {:output-path "codox"
