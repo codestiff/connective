@@ -4,10 +4,28 @@
    [connective.validator :as validator]
    [connective.adapter :as adapter]
    [connective.entity :as entity]
+   [connective.google.cloud.firestore :as g.f]
    [connective.firestore.entity.query :as e.query]
    [connective.firestore.query :as query]
    [connective.firestore.utils :as utils]
-   [connective.core :as core]))
+   [connective.core :as core])
+  (:import
+   (com.google.cloud.firestore Precondition DocumentReference)))
+
+(defn delete!
+  ([^DocumentReference dr] (delete! dr Precondition/NONE))
+  ([^DocumentReference dr
+    ^Precondition pre]
+   (-> dr (.delete pre) (.get))))
+
+(defn base-delete-fn
+  [{::entity/keys [conn]
+    ::keys [doc-id precondition]}]
+  (let [pre (g.f/mk-precondition precondition)
+        r (->
+           (f/doc conn doc-id)
+           (delete! pre))]
+    nil))
 
 (deftype FirestoreAdapter
     [params]
@@ -69,6 +87,8 @@
   (delete-entity
     [_
      {::entity/keys [conn]
+      ::keys [delete-fn]
+      :or {delete-fn base-delete-fn}
       :as context}
      {::entity/keys [kind]
       :as ident}]
@@ -76,11 +96,8 @@
     (let [base-entity {::entity/ident ident
                        ::entity/kind kind}
           doc-id (utils/doc-id base-entity)
-          doc (->
-               (f/doc conn doc-id)
-               (f/delete!))]
-      {::entity/ident ident
-       ::doc doc}))
+          {::keys [result]} (delete-fn (assoc context ::doc-id doc-id))]
+      (merge result {::entity/ident ident})))
 
   (related-query
     [_
